@@ -24,7 +24,7 @@ CREATE TABLE cs4400spring2020.Station (
 	stationName VARCHAR(55) PRIMARY KEY,
     buildingName VARCHAR(55) NOT NULL UNIQUE,
     capacity INT NOT NULL,
-    FOREIGN KEY (buildingName) REFERENCES Building (buildingName) 
+    FOREIGN KEY (buildingName) REFERENCES Building (buildingName)
 		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -45,8 +45,8 @@ CREATE TABLE cs4400spring2020.Customer (
 CREATE TABLE cs4400spring2020.Employee (
 	username VARCHAR(55) PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
-    FOREIGN KEY (username) REFERENCES `User` (username) 
-		ON UPDATE CASCADE ON DELETE CASCADE 
+    FOREIGN KEY (username) REFERENCES `User` (username)
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE cs4400spring2020.Manager (
@@ -101,7 +101,7 @@ CREATE TABLE cs4400spring2020.MenuItem (
 
 CREATE TABLE cs4400spring2020.BuildingTag (
 	buildingName VARCHAR(55) NOT NULL,
-    tag VARCHAR(55) NOT NULL, 
+    tag VARCHAR(55) NOT NULL,
     PRIMARY KEY (buildingName, tag),
     FOREIGN KEY (buildingName) REFERENCES Building (buildingName)
 		ON UPDATE CASCADE ON DELETE CASCADE
@@ -186,19 +186,19 @@ sp_main: BEGIN
 		username VARCHAR(50),
 		userType ENUM('Customer', 'Admin', 'Staff', 'Manager', 'Admin-Customer', 'Staff-Customer', 'Manager-Customer')
     );
-    
+
 	IF NOT EXISTS (SELECT username, `password` FROM `User`
 		WHERE username = i_username AND `password` = md5(i_password)) THEN LEAVE sp_main; END IF;
-	
+
     INSERT INTO login_result
     SELECT username, userType FROM login_classifier WHERE username = i_username;
-    
+
 END //
-DELIMITER ; 
+DELIMITER ;
 
 -- Query #2: register  [Screen #2 Register]
 -- Don't need to check email format (XXX@XXX.XXX)
--- Make sure you check balance > 0 for customer 
+-- Make sure you check balance > 0 for customer
 -- Make sure you check password length >= 8
 DROP PROCEDURE IF EXISTS register;
 DELIMITER //
@@ -213,9 +213,30 @@ CREATE PROCEDURE register(
 BEGIN
 
     -- place your code/solution here
-    
+    DECLARE '_rollback' BOOL DEFAULT 0;
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET '_rollback' = 1;
+    INSERT into cs4400spring2020.'User' VALUES (i_username, md5(i_password), i_firstname, i_lastname);
+    IF i_type = 'Admin' THEN
+        INSERT INTO cs4400spring2020.'Admin' VALUES (i_username);
+    END IF
+    IF i_type = 'Manager' THEN
+        INSERT INTO cs4400spring2020.Manager VALUES (i_username);
+    END IF
+    IF i_type = 'Staff' THEN
+        INSERT INTO cs4400spring2020.Staff VALUES (i_username, NULL);
+    END IF
+    IF i_balance > 0 THEN
+        INSERT INTO cs4400spring2020.Customer VALUES (i_username, i_balance, NULL);
+    END IF
+    IF '_rollback' THEN
+        ROLLBACK
+    ELSE
+        COMMIT
+    END IF
+
+
 END //
-DELIMITER ; 
+DELIMITER ;
 
 -- Query #3: ad_filter_building_station [Screen #4 Admin Manage Building & Station]
 DROP PROCEDURE IF EXISTS ad_filter_building_station;
@@ -232,9 +253,9 @@ BEGIN
 		buildingName varchar(100), tags text,
         stationName varchar(100), capacity int, foodTruckNames text
 	);
-    
+
 	INSERT INTO ad_filter_building_station_result
-    SELECT * FROM 
+    SELECT * FROM
 		(SELECT buildingInfo.buildingName, tags, stationInfo.stationName, stationInfo.capacity, foodTruckNames FROM
 			(SELECT B.buildingName, GROUP_CONCAT(BT.tag) as "tags" FROM Building as B LEFT JOIN BuildingTag as BT on B.buildingName = BT.buildingName GROUP BY B.buildingName) as buildingInfo LEFT JOIN
 			(SELECT S.stationName, S.capacity, S.buildingName, GROUP_CONCAT(F.foodTruckName) as "foodTruckNames" FROM Station as S LEFT JOIN FoodTruck as F on S.stationName = F.stationName GROUP BY S.stationName) as stationInfo
@@ -245,7 +266,7 @@ BEGIN
     AND (i_stationName is NULL OR i_stationName = "" OR stationName = i_stationName)
     AND (i_minCapacity is NULL OR capacity >= i_minCapacity)
     AND (i_maxCapacity is NULL OR capacity <= i_maxCapacity);
-    
+
 END //
 DELIMITER ;
 
@@ -257,7 +278,7 @@ CREATE PROCEDURE ad_delete_building(
 BEGIN
 
 	DELETE FROM Building WHERE buildingName = i_buildingName;
-    
+
 END //
 DELIMITER ;
 
@@ -269,7 +290,7 @@ CREATE PROCEDURE ad_delete_station(
 BEGIN
 
 	DELETE FROM Station WHERE stationName = i_stationName;
-    
+
 END //
 DELIMITER ;
 
@@ -303,7 +324,7 @@ CREATE PROCEDURE ad_create_building(IN i_buildingName VARCHAR(55), IN i_descript
 BEGIN
 
 	INSERT INTO Building VALUES (i_buildingName, i_description);
-    
+
 END //
 DELIMITER ;
 
@@ -333,7 +354,7 @@ BEGIN
 
     INSERT INTO ad_view_building_tags_result
     SELECT tag
-    FROM BuildingTag 
+    FROM BuildingTag
     WHERE buildingName = i_buildingName;
 
 END //
@@ -344,8 +365,8 @@ DROP PROCEDURE IF EXISTS ad_update_building;
 DELIMITER //
 CREATE PROCEDURE ad_update_building(IN i_oldBuildingName VARCHAR(55), IN i_newBuildingName VARCHAR(55), IN i_description TEXT)
 BEGIN
-    UPDATE Building 
-    SET buildingName = i_newBuildingName, `description` = i_description 
+    UPDATE Building
+    SET buildingName = i_newBuildingName, `description` = i_description
     WHERE buildingName = i_oldBuildingName;
 
 END //
@@ -380,7 +401,7 @@ BEGIN
         INSERT INTO Station (stationName, buildingName, capacity)
         VALUES (i_stationName,  i_buildingName, i_capacity);
     END IF;
-    
+
 END //
 DELIMITER ;
 
@@ -396,7 +417,7 @@ BEGIN
     SELECT stationName, capacity, buildingName
     FROM Station
     WHERE stationName = i_stationName;
-    
+
 END //
 DELIMITER ;
 
@@ -409,7 +430,7 @@ BEGIN
     UPDATE Station
     SET capacity = i_capacity, buildingName = i_buildingName
     WHERE stationName = i_stationName;
-    
+
 END //
 DELIMITER ;
 
@@ -424,14 +445,14 @@ BEGIN
 	INSERT INTO ad_filter_food_result
     SELECT foodName, count(foodName) as menuCount, sum(purchaseQuantity) as purchaseCount
     FROM orderdetail
-    WHERE i_foodName = NULL OR foodName = i_foodName
+    WHERE i_foodName IS NULL OR foodName = i_foodName
     GROUP BY foodName
     ORDER BY
-        CASE WHEN (i_sortedBy = "name" AND (i_sortDirection = "ASC" OR i_sortDirection = NULL)) THEN foodName END ASC,
+        CASE WHEN (i_sortedBy = "name" AND (i_sortDirection = "ASC" OR i_sortDirection IS NULL)) THEN foodName END ASC,
         CASE WHEN i_sortedBy = "name" AND i_sortDirection = "DESC" THEN foodName END DESC,
-		CASE WHEN i_sortedBy = "menuCount" AND (i_sortDirection = "ASC" OR i_sortDirection = NULL) THEN menuCount END ASC,
+		CASE WHEN i_sortedBy = "menuCount" AND (i_sortDirection = "ASC" OR i_sortDirection IS NULL) THEN menuCount END ASC,
 		CASE WHEN i_sortedBy = "menuCount" AND i_sortDirection = "DESC" THEN menuCount END DESC,
-		CASE WHEN i_sortedBy = "purchaseCount" AND (i_sortDirection = "ASC" OR i_sortDirection = NULL) THEN purchaseCount END ASC,
+		CASE WHEN i_sortedBy = "purchaseCount" AND (i_sortDirection = "ASC" OR i_sortDirection IS NULL) THEN purchaseCount END ASC,
 		CASE WHEN i_sortedBy = "purchaseCount" AND i_sortDirection = "DESC" THEN purchaseCount END DESC;
 
 END //
@@ -445,7 +466,7 @@ BEGIN
 
     DELETE FROM Food
     WHERE foodName = i_foodName;
-    
+
 END //
 DELIMITER ;
 
@@ -457,7 +478,7 @@ BEGIN
 
     INSERT INTO Food(foodName)
     VALUES (i_foodName);
-    
+
 END //
 DELIMITER ;
 
@@ -466,10 +487,10 @@ DROP PROCEDURE IF EXISTS mn_filter_foodTruck;
 DELIMITER //
 CREATE PROCEDURE mn_filter_foodTruck(
     IN i_managerUsername VARCHAR(50),
-    IN i_foodTruckName VARCHAR(50), 
-    IN i_stationName VARCHAR(50), 
-    IN i_minStaffCount INT, 
-    IN i_maxStaffCount INT, 
+    IN i_foodTruckName VARCHAR(50),
+    IN i_stationName VARCHAR(50),
+    IN i_minStaffCount INT,
+    IN i_maxStaffCount INT,
     IN i_hasRemainingCapacity BOOLEAN)
 BEGIN
 
@@ -490,7 +511,7 @@ SELECT foodTruckName, stationName, capacity, COUNT(DISTINCT username), COUNT(DIS
     (i_stationName = stationName OR i_stationName = "") AND
     ((i_hasRemainingCapacity = TRUE AND capacity>0) OR (i_hasRemainingCapacity = FALSE))
     GROUP BY foodTruckName
-    HAVING 
+    HAVING
     ((i_minStaffCount IS NULL AND i_maxStaffCount IS NULL) OR (i_minStaffCount IS NULL AND staffCount <= i_maxStaffCount) OR (i_maxStaffCount IS NULL AND i_minStaffCount <= staffCount) OR (staffCount BETWEEN i_minStaffCount AND i_maxStaffCount));
 
 END //
@@ -653,42 +674,42 @@ CREATE PROCEDURE mn_get_station(IN i_managerUsername VARCHAR(50))
 BEGIN
     DROP TABLE IF EXISTS mn_get_station_result;
     CREATE TABLE mn_get_station_result(stationName varchar(100));
- 
+
     INSERT INTO mn_get_station_result
-    SELECT DISTINCT(stationName) 
+    SELECT DISTINCT(stationName)
     FROM FoodTruck
     WHERE managerUsername = i_managerUsername;
-   
+
 END //
 DELIMITER ;
- 
+
 -- Query #24: mn_filter_summary [Screen #14 Manager Food Truck Summary]
 DROP PROCEDURE IF EXISTS mn_filter_summary;
 DELIMITER //
 CREATE PROCEDURE mn_filter_summary(
-    IN i_managerUsername VARCHAR(50), 
-    IN i_foodTruckName VARCHAR(50), 
-    IN i_stationName VARCHAR(50), 
-    IN i_minDate DATE, 
-    IN i_maxDate DATE, 
-    IN i_sortedBy ENUM('foodTruckName', 'totalOrder', 'totalRevenue', 'totalCustomer'), 
+    IN i_managerUsername VARCHAR(50),
+    IN i_foodTruckName VARCHAR(50),
+    IN i_stationName VARCHAR(50),
+    IN i_minDate DATE,
+    IN i_maxDate DATE,
+    IN i_sortedBy ENUM('foodTruckName', 'totalOrder', 'totalRevenue', 'totalCustomer'),
     IN i_sortedDirection ENUM('ASC', 'DESC'))
 BEGIN
     DROP TABLE IF EXISTS mn_filter_summary_result;
-    CREATE TABLE mn_filter_summary_result(foodTruckName varchar(100), totalOrder int, totalRevenue decimal, totalCustomer int);
- 
+    CREATE TABLE mn_filter_summary_result(foodTruckName varchar(100), totalOrder int, totalRevenue DECIMAL(6,2), totalCustomer int);
+
     INSERT INTO mn_filter_summary_result
     SELECT foodTruckName, totalOrder, totalRevenue, totalCustomer
     FROM
     (   SELECT FoodTruck.foodTruckName as foodTruckName, COUNT(DISTINCT (Orders.orderID)) as totalOrder, SUM(MenuItem.price * OrderDetail.purchaseQuantity) as totalRevenue, COUNT(DISTINCT customerUsername) as totalCustomer
-        FROM Orders 
+        FROM Orders
         INNER JOIN
         OrderDetail ON Orders.orderID = OrderDetail.orderID
         INNER JOIN
         MenuItem ON (OrderDetail.foodName = MenuItem.foodName AND OrderDetail.foodTruckName = MenuItem.foodTruckName)
         INNER JOIN
         FoodTruck ON OrderDetail.foodTruckName = FoodTruck.foodTruckName
-        WHERE 
+        WHERE
         (i_managerUsername = FoodTruck.managerUsername) AND
         (i_foodTruckName IS NULL OR FoodTruck.foodTruckName LIKE CONCAT('%', i_foodTruckName, '%') ) AND
         (i_stationName IS NULL OR FoodTruck.stationName LIKE CONCAT('%', i_stationName, '%') ) AND
@@ -696,21 +717,21 @@ BEGIN
         GROUP BY FoodTruck.foodTruckName
     ) T
     ORDER BY
-        CASE WHEN (i_sortedBy = NULL AND (i_sortedDirection = "ASC" OR i_sortedDirection = NULL)) THEN foodTruckName END ASC,
-        CASE WHEN (i_sortedBy = NULL AND i_sortedDirection = "DESC") THEN foodTruckName END DESC,
-        CASE WHEN i_sortedBy = "foodTruckName" AND (i_sortedDirection = "ASC" OR i_sortedDirection = NULL) THEN foodTruckName END ASC,
+        CASE WHEN (i_sortedBy IS NULL AND (i_sortedDirection = "ASC" OR i_sortedDirection IS NULL)) THEN foodTruckName END ASC,
+        CASE WHEN (i_sortedBy IS NULL AND i_sortedDirection = "DESC") THEN foodTruckName END DESC,
+        CASE WHEN i_sortedBy = "foodTruckName" AND (i_sortedDirection = "ASC" OR i_sortedDirection IS NULL) THEN foodTruckName END ASC,
         CASE WHEN i_sortedBy = "foodTruckName" AND i_sortedDirection = "DESC" THEN foodTruckName END DESC,
-        CASE WHEN i_sortedBy = "totalOrder" AND (i_sortedDirection = "ASC" OR i_sortedDirection = NULL) THEN totalOrder END ASC,
+        CASE WHEN i_sortedBy = "totalOrder" AND (i_sortedDirection = "ASC" OR i_sortedDirection IS NULL) THEN totalOrder END ASC,
         CASE WHEN i_sortedBy = "totalOrder" AND i_sortedDirection = "DESC" THEN totalOrder END DESC,
-        CASE WHEN i_sortedBy = "totalRevenue" AND (i_sortedDirection = "ASC" OR i_sortedDirection = NULL) THEN totalRevenue END ASC,
+        CASE WHEN i_sortedBy = "totalRevenue" AND (i_sortedDirection = "ASC" OR i_sortedDirection IS NULL) THEN totalRevenue END ASC,
         CASE WHEN i_sortedBy = "totalRevenue" AND i_sortedDirection = "DESC" THEN totalRevenue END DESC,
-        CASE WHEN i_sortedBy = "totalCustomer" AND (i_sortedDirection = "ASC" OR i_sortedDirection = NULL) THEN totalCustomer END ASC,
+        CASE WHEN i_sortedBy = "totalCustomer" AND (i_sortedDirection = "ASC" OR i_sortedDirection IS NULL) THEN totalCustomer END ASC,
         CASE WHEN i_sortedBy = "totalCustomer" AND i_sortedDirection = "DESC" THEN totalCustomer END DESC
         ;
- 
+
 END //
 DELIMITER ;
- 
+
 -- Query #25: mn_summary_detail [Screen #15 Manager Summary Detail]
 DROP PROCEDURE IF EXISTS mn_summary_detail;
 DELIMITER //
@@ -719,27 +740,27 @@ BEGIN
     DROP TABLE IF EXISTS mn_summary_detail_result;
     CREATE TABLE mn_summary_detail_result(`date` date, customerName varchar(100), totalPurchase DECIMAL(6, 2),
         orderCount int, foodNames text);
-    
+
     INSERT INTO mn_summary_detail_result
     SELECT Orders.date AS `date`, CONCAT(firstName , ' ' , lastName) AS customerName, SUM(price * purchaseQuantity) AS totalPurchase, COUNT(DISTINCT (Orders.orderID)) AS orderCount,  GROUP_CONCAT(DISTINCT(OrderDetail.foodName) SEPARATOR ', ') AS foodNames
         FROM User
-        INNER JOIN  
-        Orders ON Orders.customerUsername = User.username 
+        INNER JOIN
+        Orders ON Orders.customerUsername = User.username
         INNER JOIN
         OrderDetail ON Orders.orderID = OrderDetail.orderID
         INNER JOIN
-        FoodTruck ON OrderDetail.foodTruckName  = FoodTruck.foodTruckName 
+        FoodTruck ON OrderDetail.foodTruckName  = FoodTruck.foodTruckName
         INNER JOIN
         MenuItem ON (OrderDetail.foodName = MenuItem.foodName AND OrderDetail.foodTruckName = MenuItem.foodTruckName)
         WHERE
         (FoodTruck.foodTruckName = i_foodTruckName) AND
         (FoodTruck.managerUsername =  i_managerUsername)
         GROUP BY Orders.date, Orders.customerUsername
-        ORDER BY Orders.date desc; 
- 
+        ORDER BY Orders.date desc;
+
 END //
 DELIMITER ;
- 
+
 -- Query #26: cus_filter_explore [Screen #16 Customer Explore]
 DROP PROCEDURE IF EXISTS cus_filter_explore;
 DELIMITER //
@@ -748,16 +769,16 @@ BEGIN
     DROP TABLE IF EXISTS cus_filter_explore_result;
     CREATE TABLE cus_filter_explore_result(stationName varchar(100), buildingName varchar(100),
         foodTruckNames text, foodNames text);
-    
+
     INSERT INTO cus_filter_explore_result
     SELECT Station.stationName, Station.buildingName, GROUP_CONCAT(DISTINCT(FoodTruck.foodTruckName) SEPARATOR ',') AS foodTruckNames, GROUP_CONCAT(DISTINCT(MenuItem.foodName) SEPARATOR ',') AS foodNames
-        FROM Station 
+        FROM Station
         INNER JOIN
         FoodTruck ON Station.stationName = FoodTruck.stationName
-        INNER JOIN  
+        INNER JOIN
         MenuItem  ON FoodTruck.foodTruckName = MenuItem.foodTruckName
         INNER JOIN
-        BuildingTag ON Station.buildingName  = BuildingTag.buildingName 
+        BuildingTag ON Station.buildingName  = BuildingTag.buildingName
         WHERE
         (i_buildingName is NULL OR i_buildingName = Station.buildingName) AND
         (i_stationName is NULL OR i_stationName = Station.stationName) AND
@@ -765,10 +786,10 @@ BEGIN
         (i_foodTruckName is NULL OR FoodTruck.foodTruckName LIKE CONCAT('%', i_foodTruckName, '%')) AND
         (i_foodName is NULL OR MenuItem.foodName LIKE CONCAT('%', i_foodName, '%'))
         GROUP BY Station.stationName;
-        
+
 END //
 DELIMITER ;
- 
+
 -- Query #27: cus_select_location [Screen #16 Customer Explore]
 DROP PROCEDURE IF EXISTS cus_select_location;
 DELIMITER //
@@ -776,11 +797,11 @@ CREATE PROCEDURE cus_select_location( IN i_customerUsername VARCHAR(50), IN i_st
 BEGIN
     IF i_stationName in (SELECT stationName FROM Station)
     THEN
-    UPDATE Customer 
-    SET stationName = i_stationName 
+    UPDATE Customer
+    SET stationName = i_stationName
     WHERE username = i_customerUsername;
     END IF;
- 
+
 END //
 DELIMITER ;
 
@@ -794,9 +815,9 @@ BEGIN
 		balance DECIMAL(6, 2));
 
     -- place your code/solution here
-	
+
 END //
-DELIMITER ;    
+DELIMITER ;
 
 -- Query #29: cus_current_information_foodTruck [Screen #17 Customer Current Information]
 DROP PROCEDURE IF EXISTS cus_current_information_foodTruck;
@@ -809,7 +830,7 @@ BEGIN
     -- place your code/solution here
 
 END //
-DELIMITER ;    
+DELIMITER ;
 
 -- Query #30: cus_order [Screen #18 Customer Order]
 DROP PROCEDURE IF EXISTS cus_order;
@@ -818,11 +839,9 @@ CREATE PROCEDURE cus_order(IN i_date DATE, i_customerUsername VARCHAR(55))
 BEGIN
 
     -- place your code/solution here
-	SELECT Orders.date, Orders.customerUsername
-    FROM Orders
-    WHERE (Orders.date = i_date) AND (Orders.customerUsername = i_customerUsername);
+
 END //
-DELIMITER ;   
+DELIMITER ;
 
 -- Query #31: cus_add_item_to_order [Screen #18 Customer Order]
 -- Adds a quantity of food to an order if and only if a customer's balance can
@@ -836,7 +855,7 @@ BEGIN
     -- place your code/solution here
 
 END //
-DELIMITER ;   
+DELIMITER ;
 
 -- Query #32: cus_order_history [Screen #19 Customer Order History]
 DROP PROCEDURE IF EXISTS cus_order_history;
