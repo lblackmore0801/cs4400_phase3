@@ -213,26 +213,26 @@ CREATE PROCEDURE register(
 BEGIN
 
     -- place your code/solution here
-    DECLARE '_rollback' BOOL DEFAULT 0;
-    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET '_rollback' = 1;
-    INSERT into cs4400spring2020.'User' VALUES (i_username, md5(i_password), i_firstname, i_lastname);
+    DECLARE _rollback BOOL DEFAULT 0;
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET _rollback = 1;
+    INSERT INTO User VALUES (i_username, md5(i_password), i_firstname, i_lastname);
     IF i_type = 'Admin' THEN
-        INSERT INTO cs4400spring2020.'Admin' VALUES (i_username);
-    END IF
+        INSERT INTO Admin VALUES (i_username);
+    END IF;
     IF i_type = 'Manager' THEN
         INSERT INTO cs4400spring2020.Manager VALUES (i_username);
-    END IF
+    END IF;
     IF i_type = 'Staff' THEN
         INSERT INTO cs4400spring2020.Staff VALUES (i_username, NULL);
-    END IF
+    END IF;
     IF i_balance > 0 THEN
         INSERT INTO cs4400spring2020.Customer VALUES (i_username, i_balance, NULL);
-    END IF
-    IF '_rollback' THEN
-        ROLLBACK
+    END IF;
+    IF _rollback THEN
+        ROLLBACK;
     ELSE
-        COMMIT
-    END IF
+        COMMIT;
+    END IF;
 
 
 END //
