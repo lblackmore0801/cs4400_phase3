@@ -839,7 +839,7 @@ CREATE PROCEDURE cus_order(IN i_date DATE, i_customerUsername VARCHAR(55))
 BEGIN
 
     -- place your code/solution here
-
+    INSERT INTO cus_order(`date`, customerUsername) VALUES (i_date, i_customerUsername);
 END //
 DELIMITER ;
 
