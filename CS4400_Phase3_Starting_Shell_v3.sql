@@ -874,6 +874,20 @@ BEGIN
 		foodNames varchar(100), foodQuantity int);
 
     -- place your code/solution here
-
+	INSERT INTO cus_order_history_result
+    SELECT Orders.date, Orders.orderID, OrderDetail.purchaseQuanitity * MenuItem.price AS orderTotal,  GROUP_CONCAT(DISTINCT(OrderDetail.foodName) SEPARATOR ', ') AS foodNames, COUNT(foodNames) as foodQuantity
+        FROM Customer
+        INNER JOIN
+        Orders ON Orders.customerUsername = i_customerUsername
+        INNER JOIN
+        OrderDetail ON Orders.orderID = OrderDetail.orderID
+        INNER JOIN
+        FoodTruck ON OrderDetail.foodTruckName  = FoodTruck.foodTruckName
+        INNER JOIN
+        MenuItem ON (OrderDetail.foodName = MenuItem.foodName AND OrderDetail.foodTruckName = MenuItem.foodTruckName)
+        WHERE
+        (Orders.customerUsername = i_customerUsername)
+        GROUP BY Orders.orderID
+        ORDER BY Orders.orderID asc;
 END //
 DELIMITER ;
