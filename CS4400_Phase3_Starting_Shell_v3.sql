@@ -853,6 +853,13 @@ CREATE PROCEDURE cus_add_item_to_order(IN i_foodTruckName VARCHAR(55), IN i_food
 BEGIN
 
     -- place your code/solution here
+    DECLARE customerBalance INT;
+    DECLARE foodPrice INT;
+    SELECT @customerBalance := balance FROM customers WHERE customers.username IN (SELECT orderID, customerUsername FROM orders WHERE orders.orderID = i_orderID);
+    SELECT @foodPrice := foodPrice FROM menuItem WHERE menuItem.foodTruckName = i_foodTruckName AND menuItem.foodName = i_foodName;
+    IF foodPrice * purchaseQuantity <= customerBalance THEN
+		INSERT INTO OrderDetail VALUES (val, i_foodTruckName, i_foodName, i_purchaseQuantity, i_orderID);
+	END IF;
 
 END //
 DELIMITER ;
