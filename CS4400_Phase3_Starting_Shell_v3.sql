@@ -523,7 +523,10 @@ DELIMITER //
 CREATE PROCEDURE mn_delete_foodTruck(IN i_foodTruckName VARCHAR(50))
 BEGIN
 
-    DELETE FROM FOOD_TRUCK
+	UPDATE Staff SET foodTruckName = NULL WHERE Staff.foodTruckName = i_foodTruckName;
+    DELETE FROM OrderDetail WHERE OrderDetail.foodTruckName = i_foodTruckName;
+    DELETE FROM MenuItem WHERE MenuItem.foodTruckName = i_foodTruckName;
+    DELETE FROM FoodTruck
     WHERE i_foodTruckName = foodTruckName;
 
 END //
@@ -828,6 +831,21 @@ BEGIN
     CREATE TABLE cus_current_information_foodTruck_result(foodTruckName varchar(100), managerName varchar(100), foodNames text);
 
     -- place your code/solution here
+	-- INSERT INTO cus_current_information_foodTruck_result
+--     SELECT FoodTruck.foodTruckName, CONCAT(User.firstName , ' ' , User.lastName) AS managerName, GROUP_CONCAT(DISTINCT(OrderDetail.foodName) SEPARATOR ', ') AS foodNames
+--         FROM Customer
+--         INNER JOIN
+--         FoodTruck ON FoodTruck.stationName = Customer.stationName
+--         INNER JOIN
+--         OrderDetail ON Orders.orderID = OrderDetail.orderID
+--         INNER JOIN
+--         FoodTruck ON OrderDetail.foodTruckName  = FoodTruck.foodTruckName
+--         INNER JOIN
+--         MenuItem ON (OrderDetail.foodName = MenuItem.foodName AND OrderDetail.foodTruckName = MenuItem.foodTruckName)
+--         WHERE
+--         (Orders.customerUsername = i_customerUsername)
+--         GROUP BY Orders.orderID
+--         ORDER BY Orders.orderID asc;
 
 END //
 DELIMITER ;
@@ -874,20 +892,20 @@ BEGIN
 		foodNames varchar(100), foodQuantity int);
 
     -- place your code/solution here
-	INSERT INTO cus_order_history_result
-    SELECT Orders.date, Orders.orderID, OrderDetail.purchaseQuanitity * MenuItem.price AS orderTotal,  GROUP_CONCAT(DISTINCT(OrderDetail.foodName) SEPARATOR ', ') AS foodNames, COUNT(foodNames) as foodQuantity
-        FROM Customer
-        INNER JOIN
-        Orders ON Orders.customerUsername = i_customerUsername
-        INNER JOIN
-        OrderDetail ON Orders.orderID = OrderDetail.orderID
-        INNER JOIN
-        FoodTruck ON OrderDetail.foodTruckName  = FoodTruck.foodTruckName
-        INNER JOIN
-        MenuItem ON (OrderDetail.foodName = MenuItem.foodName AND OrderDetail.foodTruckName = MenuItem.foodTruckName)
-        WHERE
-        (Orders.customerUsername = i_customerUsername)
-        GROUP BY Orders.orderID
-        ORDER BY Orders.orderID asc;
+	-- INSERT INTO cus_order_history_result
+--     SELECT cs4400spring2020.Orders.date, cs4400spring2020.Orders.orderID, OrderDetail.purchaseQuanitity * MenuItem.price AS orderTotal,  GROUP_CONCAT(DISTINCT(OrderDetail.foodName) SEPARATOR ', ') AS foodNames, COUNT(foodNames) as foodQuantity
+--         FROM cs4400spring2020.Orders
+--         INNER JOIN
+--         cs4400spring2020.Orders ON cs4400spring2020.Orders.customerUsername = i_customerUsername
+--         INNER JOIN
+--         OrderDetail ON cs4400spring2020.Orders.orderID = OrderDetail.orderID
+--         INNER JOIN
+--         FoodTruck ON OrderDetail.foodTruckName  = FoodTruck.foodTruckName
+--         INNER JOIN
+--         MenuItem ON (OrderDetail.foodName = MenuItem.foodName AND OrderDetail.foodTruckName = MenuItem.foodTruckName)
+--         WHERE
+--         (cs4400spring2020.Orders.customerUsername = i_customerUsername)
+--         GROUP BY cs4400spring2020.Orders.orderID
+--         ORDER BY cs4400spring2020.Orders.orderID asc;
 END //
 DELIMITER ;
