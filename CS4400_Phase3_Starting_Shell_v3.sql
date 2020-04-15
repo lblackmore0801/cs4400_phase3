@@ -538,7 +538,7 @@ DELIMITER //
 CREATE PROCEDURE mn_create_foodTruck_add_station(IN i_foodTruckName VARCHAR(50), IN i_stationName VARCHAR(50), IN i_managerUsername VARCHAR(50))
 BEGIN
 
-INSERT INTO FOOD_TRUCK(foodTruckName, stationName, managerUsername)
+INSERT INTO FoodTruck(foodTruckName, stationName, managerUsername)
 VALUES (i_foodTruckName, i_stationName, i_managerUsername);
 
 END //
@@ -550,8 +550,10 @@ DELIMITER //
 CREATE PROCEDURE mn_create_foodTruck_add_staff(IN i_foodTruckName VARCHAR(50), IN i_staffName VARCHAR(50))
 BEGIN
 
-INSERT INTO STAFF(username, foodTruckName)
-VALUES (i_staffName, i_foodTruckName);
+	
+	UPDATE Staff SET foodTruckName = 'i_foodTruckName' WHERE Staff.username =
+		(SELECT username FROM cs4400spring2020.User WHERE i_staffName LIKE User.firstName
+        AND i_staffName LIKE User.lastName);
 
 END //
 DELIMITER ;
@@ -873,8 +875,8 @@ BEGIN
     -- place your code/solution here
     DECLARE customerBalance INT;
     DECLARE foodPrice INT;
-    SELECT @customerBalance := balance FROM customers WHERE customers.username IN (SELECT orderID, customerUsername FROM orders WHERE orders.orderID = i_orderID);
-    SELECT @foodPrice := foodPrice FROM menuItem WHERE menuItem.foodTruckName = i_foodTruckName AND menuItem.foodName = i_foodName;
+    SELECT @customerBalance := balance FROM Customers WHERE customers.username IN (SELECT orderID, customerUsername FROM orders WHERE orders.orderID = i_orderID);
+    SELECT @foodPrice := foodPrice FROM MenuItem WHERE menuItem.foodTruckName = i_foodTruckName AND menuItem.foodName = i_foodName;
     IF foodPrice * purchaseQuantity <= customerBalance THEN
 		INSERT INTO OrderDetail VALUES (val, i_foodTruckName, i_foodName, i_purchaseQuantity, i_orderID);
 	END IF;
