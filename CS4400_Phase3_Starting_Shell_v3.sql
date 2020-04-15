@@ -551,9 +551,8 @@ CREATE PROCEDURE mn_create_foodTruck_add_staff(IN i_foodTruckName VARCHAR(50), I
 BEGIN
 
 	
-	UPDATE Staff SET foodTruckName = 'i_foodTruckName' WHERE Staff.username =
-		(SELECT username FROM cs4400spring2020.User WHERE i_staffName LIKE User.firstName
-        AND i_staffName LIKE User.lastName);
+	UPDATE Staff SET foodTruckName = i_foodTruckName WHERE Staff.username IN
+		(SELECT username, CONCAT(firstName, ' ', lastName) AS fullName FROM cs4400spring2020.User WHERE i_staffName = fullName);
 
 END //
 DELIMITER ;
