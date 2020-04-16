@@ -820,8 +820,8 @@ BEGIN
 		balance DECIMAL(6, 2));
 
     -- place your code/solution here
-    SELECT station.SName, building.BName, tag.Tag_Name, building.BDescriptionl customer.Balance
-    FROM customer, building, tag, building
+    SELECT station.SName, building.BName, tag.Tag_Name, building.BDescription, customer.Balance
+    FROM customer, building, tag, station
     WHERE customer.Located_At = station.SName
     AND station.Sponsor = building.BName
     AND building.BName = tag.BName;
