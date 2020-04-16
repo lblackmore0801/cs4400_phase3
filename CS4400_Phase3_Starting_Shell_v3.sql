@@ -217,12 +217,15 @@ BEGIN
     DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET _rollback = 1;
     INSERT INTO User VALUES (i_username, md5(i_password), i_firstname, i_lastname);
     IF i_type = 'Admin' THEN
+		INSERT INTO Employee VALUES (i_username, i_email);
         INSERT INTO Admin VALUES (i_username);
     END IF;
     IF i_type = 'Manager' THEN
+		INSERT INTO Employee VALUES (i_username, i_email);
         INSERT INTO cs4400spring2020.Manager VALUES (i_username);
     END IF;
     IF i_type = 'Staff' THEN
+		INSERT INTO Employee VALUES (i_username, i_email);
         INSERT INTO cs4400spring2020.Staff VALUES (i_username, NULL);
     END IF;
     IF i_balance > 0 THEN
@@ -518,16 +521,15 @@ END //
 DELIMITER ;
 
 -- Query #18: mn_delete_foodTruck [Screen #11 Manager Manage Food Truck]
+-- Only deletes if there are no menuItems associated with the foodTruck
+-- @678 https://piazza.com/class/k55bdg7need3bp?cid=678
 DROP PROCEDURE IF EXISTS mn_delete_foodTruck;
 DELIMITER //
 CREATE PROCEDURE mn_delete_foodTruck(IN i_foodTruckName VARCHAR(50))
 BEGIN
 
-	UPDATE Staff SET foodTruckName = NULL WHERE Staff.foodTruckName = i_foodTruckName;
-    DELETE FROM OrderDetail WHERE OrderDetail.foodTruckName = i_foodTruckName;
-    DELETE FROM MenuItem WHERE MenuItem.foodTruckName = i_foodTruckName;
     DELETE FROM FoodTruck
-    WHERE i_foodTruckName = foodTruckName;
+		WHERE i_foodTruckName = foodTruckName;
 
 END //
 DELIMITER ;
@@ -538,8 +540,8 @@ DELIMITER //
 CREATE PROCEDURE mn_create_foodTruck_add_station(IN i_foodTruckName VARCHAR(50), IN i_stationName VARCHAR(50), IN i_managerUsername VARCHAR(50))
 BEGIN
 
-INSERT INTO FoodTruck(foodTruckName, stationName, managerUsername)
-VALUES (i_foodTruckName, i_stationName, i_managerUsername);
+	INSERT INTO FoodTruck(foodTruckName, stationName, managerUsername)
+		VALUES (i_foodTruckName, i_stationName, i_managerUsername);
 
 END //
 DELIMITER ;
@@ -563,8 +565,8 @@ DELIMITER //
 CREATE PROCEDURE mn_create_foodTruck_add_menu_item(IN i_foodTruckName VARCHAR(50), IN i_price DECIMAL(6,2), IN i_foodName VARCHAR(50))
 BEGIN
 
-    INSERT INTO MENU_ITEM(price, foodTruckName, foodName)
-    VALUES (i_price, i_foodTruckName, i_foodName);
+    INSERT INTO MenuItem(price, foodTruckName, foodName)
+		VALUES (i_price, i_foodTruckName, i_foodName);
 
 END //
 DELIMITER ;
@@ -618,9 +620,9 @@ BEGIN
 	DROP TABLE IF EXISTS mn_view_foodTruck_menu_result;
      CREATE TABLE mn_view_foodTruck_menu_result(foodTruckName varchar(100), stationName varchar(100), foodName varchar(100), price DECIMAL(6,2));
      SELECT foodTruckName, stationName, foodName, price
-     FROM FOODTRUCK
-     INNER JOIN MENU_ITEM
-     ON FOODTRUCK.foodTruckName = MENU_ITEM.foodTruckName
+     FROM FoodTruck
+     INNER JOIN MenuItem
+     ON FOOD_TRUCK.foodTruckName = MENU_ITEM.foodTruckName
      WHERE
      (i_foodTruckName = foodTruckName);
 
@@ -633,9 +635,9 @@ DELIMITER //
 CREATE PROCEDURE mn_update_foodTruck_station(IN i_foodTruckName VARCHAR(50), IN i_stationName VARCHAR(50))
 BEGIN
 
-    UPDATE FOODTRUCK
-    SET stationName = i_stationName
-    WHERE foodTruckName = i_foodTruckName;
+    UPDATE FoodTruck
+		SET stationName = i_stationName
+		WHERE foodTruckName = i_foodTruckName;
 
 END //
 DELIMITER ;
@@ -646,22 +648,23 @@ DELIMITER //
 CREATE PROCEDURE mn_update_foodTruck_staff(IN i_foodTruckName VARCHAR(50), IN i_staffName VARCHAR(50))
 BEGIN
 
-    UPDATE STAFF
-    SET foodTruckName = i_foodTruckName
-    WHERE staffName = i_staffName;
+    UPDATE Staff
+		SET foodTruckName = i_foodTruckName
+		WHERE staffName = i_staffName;
 
 END //
 DELIMITER ;
 
 -- Query #22c: mn_update_foodTruck_menu_item [Screen #13 Manager Update Food Truck]
+-- Adds new menu item, does not update the price of a menu item
+-- Piazza post @682 https://piazza.com/class/k55bdg7need3bp?cid=682
 DROP PROCEDURE IF EXISTS mn_update_foodTruck_menu_item;
 DELIMITER //
 CREATE PROCEDURE mn_update_foodTruck_menu_item(IN i_foodTruckName VARCHAR(50), IN i_price DECIMAL(6,2), IN i_foodName VARCHAR(50))
 BEGIN
 
-    UPDATE MENU_ITEM
-    SET price = i_price
-    WHERE foodTruckName = i_foodTruckName AND foodName = i_foodName;
+    INSERT INTO MenuItem(price, foodTruckName, foodName)
+		VALUES (i_price, i_foodTruckName, i_foodName);
 
 END //
 DELIMITER ;
