@@ -628,7 +628,7 @@ BEGIN
      SELECT foodTruckName, stationName, foodName, price
      FROM FoodTruck
      INNER JOIN MenuItem
-     ON FoodTruck.foodTruckName = MENU_ITEM.foodTruckName
+     ON FoodTruck.foodTruckName = MenuItem.foodTruckName
      WHERE
      (i_foodTruckName = foodTruckName);
 
@@ -669,7 +669,7 @@ DELIMITER //
 CREATE PROCEDURE mn_update_foodTruck_menu_item(IN i_foodTruckName VARCHAR(50), IN i_price DECIMAL(6,2), IN i_foodName VARCHAR(50))
 BEGIN
 
-    UPDATE MENU_ITEM
+    UPDATE MenuItem
     SET price = i_price
     WHERE foodTruckName = i_foodTruckName AND foodName = i_foodName;
 
