@@ -217,12 +217,15 @@ BEGIN
     DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET _rollback = 1;
     INSERT INTO User VALUES (i_username, md5(i_password), i_firstname, i_lastname);
     IF i_type = 'Admin' THEN
+		INSERT INTO Employee VALUES (i_username, i_email);
         INSERT INTO Admin VALUES (i_username);
     END IF;
     IF i_type = 'Manager' THEN
+		INSERT INTO Employee VALUES (i_username, i_email);
         INSERT INTO cs4400spring2020.Manager VALUES (i_username);
     END IF;
     IF i_type = 'Staff' THEN
+		INSERT INTO Employee VALUES (i_username, i_email);
         INSERT INTO cs4400spring2020.Staff VALUES (i_username, NULL);
     END IF;
     IF i_balance > 0 THEN
@@ -538,8 +541,8 @@ DELIMITER //
 CREATE PROCEDURE mn_create_foodTruck_add_station(IN i_foodTruckName VARCHAR(50), IN i_stationName VARCHAR(50), IN i_managerUsername VARCHAR(50))
 BEGIN
 
-INSERT INTO FoodTruck(foodTruckName, stationName, managerUsername)
-VALUES (i_foodTruckName, i_stationName, i_managerUsername);
+	INSERT INTO FoodTruck(foodTruckName, stationName, managerUsername)
+		VALUES (i_foodTruckName, i_stationName, i_managerUsername);
 
 END //
 DELIMITER ;
@@ -563,7 +566,7 @@ DELIMITER //
 CREATE PROCEDURE mn_create_foodTruck_add_menu_item(IN i_foodTruckName VARCHAR(50), IN i_price DECIMAL(6,2), IN i_foodName VARCHAR(50))
 BEGIN
 
-    INSERT INTO MENU_ITEM(price, foodTruckName, foodName)
+    INSERT INTO MenuItem(price, foodTruckName, foodName)
     VALUES (i_price, i_foodTruckName, i_foodName);
 
 END //
