@@ -810,6 +810,7 @@ END //
 DELIMITER ;
 
 -- Query #28: cus_current_information_basic [Screen #17 Customer Current Information]
+-- Gets customer info including station, building, building tag(s), building description, and balance
 DROP PROCEDURE IF EXISTS cus_current_information_basic;
 DELIMITER //
 CREATE PROCEDURE cus_current_information_basic(IN i_customerUsername VARCHAR(55))
@@ -819,6 +820,11 @@ BEGIN
 		balance DECIMAL(6, 2));
 
     -- place your code/solution here
+    SELECT station.SName, building.BName, tag.Tag_Name, building.BDescriptionl customer.Balance
+    FROM customer, building, tag, building
+    WHERE customer.Located_At = station.SName
+    AND station.Sponsor = building.BName
+    AND building.BName = tag.BName;
 
 END //
 DELIMITER ;
