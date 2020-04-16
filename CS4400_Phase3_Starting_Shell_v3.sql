@@ -579,15 +579,11 @@ BEGIN
 
 	DROP TABLE IF EXISTS mn_view_foodTruck_available_staff_result;
      CREATE TABLE mn_view_foodTruck_available_staff_result(availableStaff varchar(100))
-     SELECT CONCAT(firstName , ' ' , lastName)
-     FROM FOOD_TRUCK
-     INNER JOIN STAFF
-     ON FOOD_TRUCK.foodTruckName = STAFF.foodTruckName
-     INNER JOIN USER
-     ON STAFF.username = USER.username
-     WHERE
-     (i_managerUsername = managerUsername) AND
-     (i_foodTruckName = foodTruckName);
+     SELECT CONCAT(firstName , ' ' , lastName) as availableStaff
+     FROM USER
+     INNER JOIN EMPLOYEE
+     ON USER.username = EMPLOYEE.username
+     WHERE EMPLOYEE.username NOT IN (SELECT username FROM STAFF);
 
 END //
 DELIMITER ;
@@ -602,9 +598,9 @@ BEGIN
     DROP TABLE IF EXISTS mn_view_foodTruck_staff_result;
     CREATE TABLE mn_view_foodTruck_staff_result(assignedStaff varchar(100))
     SELECT CONCAT(firstName , ' ' , lastName)
-    FROM FOOD_TRUCK
+    FROM FOODTRUCK
     INNER JOIN STAFF
-    ON FOOD_TRUCK.foodTruckName = STAFF.foodTruckName
+    ON FOODTRUCK.foodTruckName = STAFF.foodTruckName
     INNER JOIN USER
     ON STAFF.username = USER.username
     WHERE
@@ -622,9 +618,9 @@ BEGIN
 	DROP TABLE IF EXISTS mn_view_foodTruck_menu_result;
      CREATE TABLE mn_view_foodTruck_menu_result(foodTruckName varchar(100), stationName varchar(100), foodName varchar(100), price DECIMAL(6,2));
      SELECT foodTruckName, stationName, foodName, price
-     FROM FOOD_TRUCK
+     FROM FOODTRUCK
      INNER JOIN MENU_ITEM
-     ON FOOD_TRUCK.foodTruckName = MENU_ITEM.foodTruckName
+     ON FOODTRUCK.foodTruckName = MENU_ITEM.foodTruckName
      WHERE
      (i_foodTruckName = foodTruckName);
 
@@ -637,7 +633,7 @@ DELIMITER //
 CREATE PROCEDURE mn_update_foodTruck_station(IN i_foodTruckName VARCHAR(50), IN i_stationName VARCHAR(50))
 BEGIN
 
-    UPDATE FOOD_TRUCK
+    UPDATE FOODTRUCK
     SET stationName = i_stationName
     WHERE foodTruckName = i_foodTruckName;
 
