@@ -256,20 +256,20 @@ BEGIN
 		buildingName varchar(100), tags text,
         stationName varchar(100), capacity int, foodTruckNames text
 	);
-
+    
 	INSERT INTO ad_filter_building_station_result
-    SELECT * FROM
-		(SELECT buildingInfo.buildingName, tags, stationInfo.stationName, stationInfo.capacity, foodTruckNames FROM
-			(SELECT B.buildingName, GROUP_CONCAT(BT.tag) as "tags" FROM Building as B LEFT JOIN BuildingTag as BT on B.buildingName = BT.buildingName GROUP BY B.buildingName) as buildingInfo LEFT JOIN
+    SELECT innerTable.buildingName, GROUP_CONCAT(BT2.tag) as "tags", innerTable.stationName, innerTable.capacity, foodTruckNames FROM 
+		(SELECT buildingInfo.buildingName, stationInfo.stationName, stationInfo.capacity, foodTruckNames FROM
+			(SELECT DISTINCT B.buildingName FROM Building as B LEFT JOIN BuildingTag as BT on B.buildingName = BT.buildingName WHERE (i_buildingTag is NULL OR i_buildingTag = "" OR BT.tag LIKE CONCAT('%', i_buildingTag, '%'))) as buildingInfo LEFT JOIN
 			(SELECT S.stationName, S.capacity, S.buildingName, GROUP_CONCAT(F.foodTruckName) as "foodTruckNames" FROM Station as S LEFT JOIN FoodTruck as F on S.stationName = F.stationName GROUP BY S.stationName) as stationInfo
 		ON buildingInfo.buildingName = stationInfo.buildingName
 		GROUP BY buildingInfo.buildingName) as innerTable
-	WHERE (i_buildingName is NULL OR i_buildingName = "" OR buildingName = i_buildingName)
-    AND (i_buildingTag is NULL OR i_buildingTag = "" OR tags LIKE CONCAT('%', i_buildingTag, '%'))
-    AND (i_stationName is NULL OR i_stationName = "" OR stationName = i_stationName)
-    AND (i_minCapacity is NULL OR capacity >= i_minCapacity)
-    AND (i_maxCapacity is NULL OR capacity <= i_maxCapacity);
-
+	LEFT JOIN BuildingTag as BT2 on innerTable.buildingName = BT2.buildingName
+	WHERE (i_buildingName is NULL OR i_buildingName = "" OR innerTable.buildingName = i_buildingName)
+    AND (i_stationName is NULL OR i_stationName = "" OR innerTable.stationName = i_stationName)
+    AND (i_minCapacity is NULL OR innerTable.capacity >= i_minCapacity)
+    AND (i_maxCapacity is NULL OR innerTable.capacity <= i_maxCapacity)
+	GROUP BY innerTable.buildingName;
 END //
 DELIMITER ;
 
@@ -319,7 +319,6 @@ BEGIN
 END //
 DELIMITER ;
 
-
 -- Query #7: ad_create_building [Screen #5 Admin Create Building]
 DROP PROCEDURE IF EXISTS ad_create_building;
 DELIMITER //
@@ -336,7 +335,7 @@ DROP PROCEDURE IF EXISTS ad_view_building;
 DELIMITER //
 CREATE PROCEDURE ad_view_building_general(IN i_buildingName VARCHAR(55))
 BEGIN
-    DROP TABLE IF EXISTS ad_view_building_result;
+    DROP TABLE IF EXISTS ad_view_building_general_result;
     CREATE TABLE ad_view_building_general_result(buildingName varchar(55), `description` text);
 
     INSERT INTO ad_view_building_general_result
@@ -352,7 +351,7 @@ DROP PROCEDURE IF EXISTS ad_view_building_tags;
 DELIMITER //
 CREATE PROCEDURE ad_view_building_tags(IN i_buildingName VARCHAR(55))
 BEGIN
-    DROP TABLE IF EXISTS ad_view_building_result;
+    DROP TABLE IF EXISTS ad_view_building_tags_result;
     CREATE TABLE ad_view_building_tags_result(tag VARCHAR(55));
 
     INSERT INTO ad_view_building_tags_result
@@ -374,7 +373,6 @@ BEGIN
 
 END //
 DELIMITER ;
-
 
 -- Query #10: ad_get_available_building [Screen #7 Admin Create Station]
 DROP PROCEDURE IF EXISTS ad_get_available_building;
@@ -446,18 +444,21 @@ BEGIN
     CREATE TABLE ad_filter_food_result(foodName varchar(100), menuCount int, purchaseCount int);
 
 	INSERT INTO ad_filter_food_result
-    SELECT foodName, count(foodName) as menuCount, sum(purchaseQuantity) as purchaseCount
-    FROM orderdetail
-    WHERE i_foodName IS NULL OR foodName = i_foodName
-    GROUP BY foodName
+	SELECT * FROM
+		(SELECT MenuCounts.foodName, MenuCounts.menuCount, COALESCE(SUM(OrderDetail.purchaseQuantity), 0) AS purchaseCount FROM 
+			(SELECT Food.foodName, count(MenuItem.foodTruckName) AS menuCount FROM Food LEFT JOIN MenuItem ON Food.foodName = MenuItem.foodName GROUP BY foodName) AS MenuCounts
+		LEFT JOIN OrderDetail 
+		ON MenuCounts.foodName = OrderDetail.foodName
+		GROUP BY MenuCounts.foodName) as innerTable
+    WHERE (i_foodName = '' OR i_foodName is NULL OR foodName = i_foodName)
     ORDER BY
-        CASE WHEN (i_sortedBy = "name" AND (i_sortDirection = "ASC" OR i_sortDirection IS NULL)) THEN foodName END ASC,
+        CASE WHEN (i_sortedBy = "name" AND (i_sortDirection = "ASC" OR i_sortDirection = NULL)) THEN foodName END ASC,
         CASE WHEN i_sortedBy = "name" AND i_sortDirection = "DESC" THEN foodName END DESC,
-		CASE WHEN i_sortedBy = "menuCount" AND (i_sortDirection = "ASC" OR i_sortDirection IS NULL) THEN menuCount END ASC,
+		CASE WHEN i_sortedBy = "menuCount" AND (i_sortDirection = "ASC" OR i_sortDirection = NULL) THEN menuCount END ASC,
 		CASE WHEN i_sortedBy = "menuCount" AND i_sortDirection = "DESC" THEN menuCount END DESC,
-		CASE WHEN i_sortedBy = "purchaseCount" AND (i_sortDirection = "ASC" OR i_sortDirection IS NULL) THEN purchaseCount END ASC,
+		CASE WHEN i_sortedBy = "purchaseCount" AND (i_sortDirection = "ASC" OR i_sortDirection = NULL) THEN purchaseCount END ASC,
 		CASE WHEN i_sortedBy = "purchaseCount" AND i_sortDirection = "DESC" THEN purchaseCount END DESC;
-
+        
 END //
 DELIMITER ;
 
@@ -501,13 +502,13 @@ BEGIN
      CREATE TABLE mn_filter_foodTruck_result(foodTruckName varchar(100), stationName varchar(100),
 		remainingCapacity int, staffCount int, menuItemCount int)
 SELECT foodTruckName, stationName, capacity, COUNT(DISTINCT username), COUNT(DISTINCT foodName)
-    FROM FOOD_TRUCK
+    FROM FoodTruck
     INNER JOIN STATION
-    ON FOOD_TRUCK.stationName = STATION.stationName
+    ON FoodTruck.stationName = STATION.stationName
     INNER JOIN STAFF
-    ON FOOD_TRUCK.foodTruckName = STAFF.foodTruckName
-    INNER JOIN MENU_ITEM
-    ON FOOD_TRUCK.foodTruckName = MENU_ITEM.foodTruckName
+    ON FoodTruck.foodTruckName = STAFF.foodTruckName
+    INNER JOIN MenuItem
+    ON FoodTruck.foodTruckName = MenuItem.foodTruckName
     WHERE
     (i_managerUsername = managerUsername) AND
     (i_foodTruckName = foodTruckName OR i_foodTruckName = "") AND
@@ -547,11 +548,14 @@ END //
 DELIMITER ;
 
 -- Query #19b: mn_create_foodTruck_add_staff [Screen #12 Manager Create Food Truck]
+-- i_staffName parameter is the Staff's username
 DROP PROCEDURE IF EXISTS mn_create_foodTruck_add_staff;
 DELIMITER //
 CREATE PROCEDURE mn_create_foodTruck_add_staff(IN i_foodTruckName VARCHAR(50), IN i_staffName VARCHAR(50))
 BEGIN
 
+	-- INSERT INTO STAFF(username, foodTruckName)
+	-- VALUES (i_staffName, i_foodTruckName);
 	
 	UPDATE Staff SET foodTruckName = i_foodTruckName WHERE Staff.username IN
 		(SELECT username, CONCAT(firstName, ' ', lastName) AS fullName FROM cs4400spring2020.User WHERE i_staffName = fullName);
@@ -581,11 +585,15 @@ BEGIN
 
 	DROP TABLE IF EXISTS mn_view_foodTruck_available_staff_result;
      CREATE TABLE mn_view_foodTruck_available_staff_result(availableStaff varchar(100))
-     SELECT CONCAT(firstName , ' ' , lastName) as availableStaff
-     FROM USER
-     INNER JOIN EMPLOYEE
-     ON USER.username = EMPLOYEE.username
-     WHERE EMPLOYEE.username NOT IN (SELECT username FROM STAFF);
+     SELECT CONCAT(firstName , ' ' , lastName)
+     FROM FoodTruck
+     INNER JOIN STAFF
+     ON FoodTruck.foodTruckName = STAFF.foodTruckName
+     INNER JOIN USER
+     ON STAFF.username = USER.username
+     WHERE
+     (i_managerUsername = managerUsername) AND
+     (i_foodTruckName = foodTruckName);
 
 END //
 DELIMITER ;
@@ -622,7 +630,7 @@ BEGIN
      SELECT foodTruckName, stationName, foodName, price
      FROM FoodTruck
      INNER JOIN MenuItem
-     ON FOOD_TRUCK.foodTruckName = MENU_ITEM.foodTruckName
+     ON FoodTruck.foodTruckName = MenuItem.foodTruckName
      WHERE
      (i_foodTruckName = foodTruckName);
 
@@ -643,6 +651,7 @@ END //
 DELIMITER ;
 
 -- Query #22b: mn_update_foodTruck_staff [Screen #13 Manager Update Food Truck]
+-- i_staffName parameter is the Staff's username
 DROP PROCEDURE IF EXISTS mn_update_foodTruck_staff;
 DELIMITER //
 CREATE PROCEDURE mn_update_foodTruck_staff(IN i_foodTruckName VARCHAR(50), IN i_staffName VARCHAR(50))
