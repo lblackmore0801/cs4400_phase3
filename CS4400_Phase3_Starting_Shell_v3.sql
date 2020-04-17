@@ -753,8 +753,8 @@ BEGIN
         FoodTruck ON OrderDetail.foodTruckName = FoodTruck.foodTruckName
         WHERE
         (i_managerUsername = FoodTruck.managerUsername) AND
-        (i_foodTruckName IS NULL OR FoodTruck.foodTruckName LIKE CONCAT('%', i_foodTruckName, '%') ) AND
-        (i_stationName IS NULL OR FoodTruck.stationName LIKE CONCAT('%', i_stationName, '%') ) AND
+        (i_foodTruckName IS NULL OR i_foodTruckName = "" OR FoodTruck.foodTruckName LIKE CONCAT('%', i_foodTruckName, '%') ) AND
+        (i_stationName IS NULL OR i_stationName = "" OR FoodTruck.stationName LIKE CONCAT('%', i_stationName, '%') ) AND
         (i_minDate IS NULL OR Orders.date >= i_minDate) AND (i_maxDate IS NULL OR Orders.date <= i_maxDate)
         GROUP BY FoodTruck.foodTruckName
     ) T
@@ -822,11 +822,11 @@ BEGIN
         INNER JOIN
         BuildingTag ON Station.buildingName  = BuildingTag.buildingName
         WHERE
-        (i_buildingName is NULL OR i_buildingName = Station.buildingName) AND
-        (i_stationName is NULL OR i_stationName = Station.stationName) AND
-        (i_buildingTag is NULL OR BuildingTag.tag LIKE CONCAT('%', i_buildingTag, '%')) AND
-        (i_foodTruckName is NULL OR FoodTruck.foodTruckName LIKE CONCAT('%', i_foodTruckName, '%')) AND
-        (i_foodName is NULL OR MenuItem.foodName LIKE CONCAT('%', i_foodName, '%'))
+        (i_buildingName is NULL OR i_buildingName = "" OR i_buildingName = Station.buildingName) AND
+        (i_stationName is NULL OR i_stationName = "" OR i_stationName = Station.stationName) AND
+        (i_buildingTag is NULL OR i_buildingTag = "" OR BuildingTag.tag LIKE CONCAT('%', i_buildingTag, '%')) AND
+        (i_foodTruckName is NULL OR i_foodTruckName = "" OR FoodTruck.foodTruckName LIKE CONCAT('%', i_foodTruckName, '%')) AND
+        (i_foodName is NULL OR i_foodName = "" OR MenuItem.foodName LIKE CONCAT('%', i_foodName, '%'))
         GROUP BY Station.stationName;
 
 END //
