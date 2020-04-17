@@ -912,7 +912,7 @@ BEGIN
     -- place your code/solution here
     DECLARE customerBalance INT;
     DECLARE foodPrice INT;
-    SELECT @customerBalance := balance FROM Customers WHERE customers.username IN (SELECT orderID, customerUsername FROM orders WHERE orders.orderID = i_orderID);
+    SELECT @customerBalance := balance FROM Customer WHERE customer.username IN (SELECT orderID, customerUsername FROM orders WHERE orders.orderID = i_orderID);
     SELECT @foodPrice := foodPrice FROM MenuItem WHERE menuItem.foodTruckName = i_foodTruckName AND menuItem.foodName = i_foodName;
     IF foodPrice * purchaseQuantity <= customerBalance THEN
 		INSERT INTO OrderDetail VALUES (val, i_foodTruckName, i_foodName, i_purchaseQuantity, i_orderID);
