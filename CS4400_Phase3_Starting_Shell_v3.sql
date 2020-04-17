@@ -497,14 +497,32 @@ BEGIN
 	DROP TABLE IF EXISTS mn_filter_foodTruck_result;
      CREATE TABLE mn_filter_foodTruck_result(foodTruckName varchar(100), stationName varchar(100),
 		remainingCapacity int, staffCount int, menuItemCount int)
-SELECT foodTruck.FTName, station.SName, capacity, COUNT(DISTINCT username), COUNT(DISTINCT foodName)
-    FROM foodTruck
-    INNER JOIN station
-    ON foodTruck.Hosted_By = station.SName
-    INNER JOIN staff
-    ON foodTruck.FTName = staff.Work_In
-    INNER JOIN menuItem
-    ON foodTruck.FTName = menuItem.FoodTruck
+--SELECT foodTruck.FTName, station.SName, capacity, COUNT(DISTINCT username), COUNT(DISTINCT foodName)
+--    FROM foodTruck
+--    INNER JOIN station
+--    ON foodTruck.Hosted_By = station.SName
+--    INNER JOIN staff
+--    ON foodTruck.FTName = staff.Work_In
+--    INNER JOIN menuItem
+--    ON foodTruck.FTName = menuItem.FoodTruck
+--    WHERE
+--    (i_managerUsername = managerUsername) AND
+--    (i_foodTruckName = foodTruckName OR i_foodTruckName = "") AND
+--    (i_stationName = stationName OR i_stationName = "") AND
+--    ((i_hasRemainingCapacity = TRUE AND capacity>0) OR (i_hasRemainingCapacity = FALSE))
+--    GROUP BY foodTruckName
+--    HAVING
+--    ((i_minStaffCount IS NULL AND i_maxStaffCount IS NULL) OR (i_minStaffCount IS NULL AND staffCount <= i_maxStaffCount) OR (i_maxStaffCount IS NULL AND i_minStaffCount <= staffCount) OR (staffCount BETWEEN i_minStaffCount AND i_maxStaffCount));
+
+
+SELECT foodTruckName, stationName, capacity, COUNT(DISTINCT username), COUNT(DISTINCT foodName)
+    FROM FOOD_TRUCK
+    INNER JOIN STATION
+    ON FOOD_TRUCK.stationName = STATION.stationName
+    INNER JOIN STAFF
+    ON FOOD_TRUCK.foodTruckName = STAFF.foodTruckName
+    INNER JOIN MENU_ITEM
+    ON FOOD_TRUCK.foodTruckName = MENU_ITEM.foodTruckName
     WHERE
     (i_managerUsername = managerUsername) AND
     (i_foodTruckName = foodTruckName OR i_foodTruckName = "") AND
@@ -513,6 +531,8 @@ SELECT foodTruck.FTName, station.SName, capacity, COUNT(DISTINCT username), COUN
     GROUP BY foodTruckName
     HAVING
     ((i_minStaffCount IS NULL AND i_maxStaffCount IS NULL) OR (i_minStaffCount IS NULL AND staffCount <= i_maxStaffCount) OR (i_maxStaffCount IS NULL AND i_minStaffCount <= staffCount) OR (staffCount BETWEEN i_minStaffCount AND i_maxStaffCount));
+
+
 
 END //
 DELIMITER ;
