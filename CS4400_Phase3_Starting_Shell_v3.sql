@@ -215,7 +215,12 @@ BEGIN
     -- place your code/solution here
     DECLARE _rollback BOOL DEFAULT 0;
     DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET _rollback = 1;
-    INSERT INTO User VALUES (i_username, md5(i_password), i_firstname, i_lastname);
+    IF (i_username IN (SELECT username FROM USER)) OR (CONCAT(i_firstName, ' ', i_lastName) IN (SELECT CONCAT(firstName, ' ', lastName) AS fullName FROM USER)) THEN
+		SIGNAL SQLSTATE '45000'
+			SET message_text = 'Error: username or first/last name already in database';
+		ROLLBACK;
+    END IF;
+    INSERT INTO USER (username, password, firstName, lastName) VALUES (i_username, md5(i_password), i_firstname, i_lastname);
     IF i_type = 'Admin' THEN
 		INSERT INTO Employee VALUES (i_username, i_email);
         INSERT INTO Admin VALUES (i_username);
@@ -233,6 +238,7 @@ BEGIN
     END IF;
     IF _rollback THEN
         ROLLBACK;
+        SIGNAL SQLSTATE '45000';
     ELSE
         COMMIT;
     END IF;
