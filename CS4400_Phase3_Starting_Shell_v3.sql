@@ -516,23 +516,27 @@ BEGIN
 
 	DROP TABLE IF EXISTS mn_filter_foodTruck_result;
      CREATE TABLE mn_filter_foodTruck_result(foodTruckName varchar(100), stationName varchar(100),
-		remainingCapacity int, staffCount int, menuItemCount int)
-SELECT foodTruckName, stationName, capacity, COUNT(DISTINCT username), COUNT(DISTINCT foodName)
+		remainingCapacity int, staffCount int, menuItemCount int);
+
+INSERT into mn_filter_foodTruck_result
+SELECT FoodTruck.foodTruckName, Station.stationName, Station.capacity, COUNT(DISTINCT username) as staffCount, COUNT(DISTINCT foodName)
     FROM FoodTruck
-    INNER JOIN STATION
-    ON FoodTruck.stationName = STATION.stationName
-    INNER JOIN STAFF
-    ON FoodTruck.foodTruckName = STAFF.foodTruckName
+    INNER JOIN Station
+    ON FoodTruck.stationName = Station.stationName
+    INNER JOIN Staff
+    ON FoodTruck.foodTruckName = Staff.foodTruckName
     INNER JOIN MenuItem
     ON FoodTruck.foodTruckName = MenuItem.foodTruckName
     WHERE
     (i_managerUsername = managerUsername) AND
-    (i_foodTruckName = foodTruckName OR i_foodTruckName = "") AND
-    (i_stationName = stationName OR i_stationName = "") AND
+    (i_foodTruckName = FoodTruck.foodTruckName OR i_foodTruckName = "") AND
+    (i_stationName = Station.stationName OR i_stationName = "") AND
     ((i_hasRemainingCapacity = TRUE AND capacity>0) OR (i_hasRemainingCapacity = FALSE))
     GROUP BY foodTruckName
     HAVING
     ((i_minStaffCount IS NULL AND i_maxStaffCount IS NULL) OR (i_minStaffCount IS NULL AND staffCount <= i_maxStaffCount) OR (i_maxStaffCount IS NULL AND i_minStaffCount <= staffCount) OR (staffCount BETWEEN i_minStaffCount AND i_maxStaffCount));
+
+
 
 END //
 DELIMITER ;
@@ -643,7 +647,7 @@ BEGIN
 
 	DROP TABLE IF EXISTS mn_view_foodTruck_menu_result;
      CREATE TABLE mn_view_foodTruck_menu_result(foodTruckName varchar(100), stationName varchar(100), foodName varchar(100), price DECIMAL(6,2));
-     SELECT foodTruckName, stationName, foodName, price
+     SELECT FoodTruck.foodTruckName, FoodTruck.stationName, foodName, price
      FROM FoodTruck
      INNER JOIN MenuItem
      ON FoodTruck.foodTruckName = MenuItem.foodTruckName
@@ -834,6 +838,7 @@ END //
 DELIMITER ;
 
 -- Query #28: cus_current_information_basic [Screen #17 Customer Current Information]
+-- Gets customer info including station, building, building tag(s), building description, and balance
 DROP PROCEDURE IF EXISTS cus_current_information_basic;
 DELIMITER //
 CREATE PROCEDURE cus_current_information_basic(IN i_customerUsername VARCHAR(55))
@@ -843,11 +848,19 @@ BEGIN
 		balance DECIMAL(6, 2));
 
     -- place your code/solution here
+    INSERT INTO cus_current_information_basic_result
+    SELECT Station.stationName, Building.buildingName, BuildingTag.tag, building.description, Customer.balance
+    FROM Customer, Building, BuildingTag, Station
+    WHERE Customer.stationName = Station.stationName
+    AND Station.buildingName = Building.buildingName
+    AND Building.buildingName = BuildingTag.buildingName;
+
 
 END //
 DELIMITER ;
 
 -- Query #29: cus_current_information_foodTruck [Screen #17 Customer Current Information]
+-- Get food truck options, with manager and foods on truck
 DROP PROCEDURE IF EXISTS cus_current_information_foodTruck;
 DELIMITER //
 CREATE PROCEDURE cus_current_information_foodTruck(IN i_customerUsername VARCHAR(55))
