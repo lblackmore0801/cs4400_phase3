@@ -238,10 +238,14 @@ BEGIN
     END IF;
     INSERT INTO USER (username, password, firstName, lastName) VALUES (i_username, md5(i_password), i_firstname, i_lastname);
 	IF (i_type != NULL AND i_type != '') AND (i_email = NULL OR i_email = '') THEN
-		SET _rollback = 1;
+		SIGNAL SQLSTATE '45000'
+			SET message_text = 'Error: Email and Type must both be valid';
+		ROLLBACK;
     END IF;
     IF (i_email != NULL AND i_email != '') AND (type = NULL OR type = '') THEN
-		SET _rollback = 1;
+		SIGNAL SQLSTATE '45000'
+			SET message_text = 'Error: Email and Type must both be valid';
+		ROLLBACK;
     END IF;
     IF i_type = 'Admin' THEN
 		INSERT INTO Employee VALUES (i_username, i_email);
