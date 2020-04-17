@@ -229,44 +229,30 @@ CREATE PROCEDURE register(
 BEGIN
 
     -- place your code/solution here
-    DECLARE _rollback BOOL DEFAULT 0;
-    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET _rollback = 1;
-    IF (i_username IN (SELECT username FROM USER)) OR (CONCAT(i_firstName, ' ', i_lastName) IN (SELECT CONCAT(firstName, ' ', lastName) AS fullName FROM USER)) THEN
-		SIGNAL SQLSTATE '45000'
-			SET message_text = 'Error: username or first/last name already in database';
-		ROLLBACK;
-    END IF;
-    INSERT INTO USER (username, password, firstName, lastName) VALUES (i_username, md5(i_password), i_firstname, i_lastname);
-	IF (i_type != NULL AND i_type != '') AND (i_email = NULL OR i_email = '') THEN
-		SIGNAL SQLSTATE '45000'
-			SET message_text = 'Error: Email and Type must both be valid';
-		ROLLBACK;
-    END IF;
-    IF (i_email != NULL AND i_email != '') AND (type = NULL OR type = '') THEN
-		SIGNAL SQLSTATE '45000'
-			SET message_text = 'Error: Email and Type must both be valid';
-		ROLLBACK;
-    END IF;
-    IF i_type = 'Admin' THEN
-		INSERT INTO Employee VALUES (i_username, i_email);
-        INSERT INTO Admin VALUES (i_username);
-    END IF;
-    IF i_type = 'Manager' THEN
-		INSERT INTO Employee VALUES (i_username, i_email);
-        INSERT INTO cs4400spring2020.Manager VALUES (i_username);
-    END IF;
-    IF i_type = 'Staff' THEN
-		INSERT INTO Employee VALUES (i_username, i_email);
-        INSERT INTO cs4400spring2020.Staff VALUES (i_username, NULL);
-    END IF;
-    IF i_balance > 0 THEN
-        INSERT INTO cs4400spring2020.Customer VALUES (i_username, i_balance, NULL);
-    END IF;
-    IF _rollback THEN
-        ROLLBACK;
-    ELSE
-        COMMIT;
-    END IF;
+    IF (i_firstname IS NOT NULL AND i_lastname IS NOT NULL AND LENGTH(i_password) >= 8) THEN
+		IF (i_username NOT IN (SELECT username FROM USER)) AND (CONCAT(i_firstName, ' ', i_lastName) NOT IN (SELECT CONCAT(firstName, ' ', lastName) AS fullName FROM USER)) THEN
+			IF (i_balance IS NOT NULL AND i_balance > 0) OR (i_email IS NOT NULL AND i_type IS NOT NULL) THEN
+				INSERT INTO USER (username, password, firstName, lastName) VALUES (i_username, md5(i_password), i_firstname, i_lastname);
+				IF (i_balance IS NOT NULL AND i_balance > 0) THEN
+					INSERT INTO cs4400spring2020.Customer VALUES (i_username, i_balance, NULL);
+				END IF;
+				IF (i_email IS NOT NULL AND i_type IS NOT NULL AND i_email != '' AND i_type != '') THEN
+					IF i_type = 'Admin' THEN
+						INSERT INTO Employee VALUES (i_username, i_email);
+						INSERT INTO Admin VALUES (i_username);
+					END IF;
+					IF i_type = 'Manager' THEN
+						INSERT INTO Employee VALUES (i_username, i_email);
+						INSERT INTO cs4400spring2020.Manager VALUES (i_username);
+					END IF;
+					IF i_type = 'Staff' THEN
+						INSERT INTO Employee VALUES (i_username, i_email);
+						INSERT INTO cs4400spring2020.Staff VALUES (i_username, NULL);
+					END IF;
+				END IF;
+			END IF;
+		END IF;
+	END IF;
 
 
 END //
