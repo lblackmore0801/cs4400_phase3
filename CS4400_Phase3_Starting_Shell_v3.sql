@@ -820,6 +820,7 @@ BEGIN
 		balance DECIMAL(6, 2));
 
     -- place your code/solution here
+    INSERT INTO cus_current_information_basic_result
     SELECT station.SName, building.BName, tag.Tag_Name, building.BDescription, customer.Balance
     FROM customer, building, tag, station
     WHERE customer.Located_At = station.SName
@@ -830,6 +831,7 @@ END //
 DELIMITER ;
 
 -- Query #29: cus_current_information_foodTruck [Screen #17 Customer Current Information]
+-- Get food truck options, with manager and foods on truck
 DROP PROCEDURE IF EXISTS cus_current_information_foodTruck;
 DELIMITER //
 CREATE PROCEDURE cus_current_information_foodTruck(IN i_customerUsername VARCHAR(55))
