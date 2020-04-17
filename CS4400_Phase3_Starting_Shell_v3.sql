@@ -174,6 +174,22 @@ UNION
 SELECT username, 'Customer' AS userType FROM Customer
 WHERE username NOT IN (SELECT username FROM Employee);
 
+DROP VIEW IF EXISTS Q29_View1;
+CREATE VIEW Q29_View1 AS 
+SELECT *
+FROM manager NATURAL JOIN `user`;
+
+DROP VIEW IF EXISTS Q29_View2;
+CREATE VIEW Q29_View2 AS
+SELECT foodTruckName, group_concat(foodName) AS foodNames, managerUsername
+FROM menuItem NATURAL JOIN foodTruck
+GROUP BY foodTruckName;
+
+DROP VIEW IF EXISTS Q29_View3;
+CREATE VIEW Q29_View3 AS
+SELECT * FROM
+Q29_View1 INNER JOIN Q29_View2 ON username = managerUsername;
+
 -- Query #1: login [Screen #1 Login]
 DROP PROCEDURE IF EXISTS login;
 DELIMITER //
@@ -840,21 +856,16 @@ BEGIN
     CREATE TABLE cus_current_information_foodTruck_result(foodTruckName varchar(100), managerName varchar(100), foodNames text);
 
     -- place your code/solution here
-	-- INSERT INTO cus_current_information_foodTruck_result
---     SELECT FoodTruck.foodTruckName, CONCAT(User.firstName , ' ' , User.lastName) AS managerName, GROUP_CONCAT(DISTINCT(OrderDetail.foodName) SEPARATOR ', ') AS foodNames
---         FROM Customer
---         INNER JOIN
---         FoodTruck ON FoodTruck.stationName = Customer.stationName
---         INNER JOIN
---         OrderDetail ON Orders.orderID = OrderDetail.orderID
---         INNER JOIN
---         FoodTruck ON OrderDetail.foodTruckName  = FoodTruck.foodTruckName
---         INNER JOIN
---         MenuItem ON (OrderDetail.foodName = MenuItem.foodName AND OrderDetail.foodTruckName = MenuItem.foodTruckName)
---         WHERE
---         (Orders.customerUsername = i_customerUsername)
---         GROUP BY Orders.orderID
---         ORDER BY Orders.orderID asc;
+	INSERT INTO cus_current_information_foodTruck_result
+    SELECT foodTruckName, concat(firstName, " ", lastName), foodNames
+    FROM Q29_View3
+    WHERE foodTruckName IN (
+    SELECT foodTruckName
+    FROM foodtruck
+    WHERE stationName = (
+    SELECT stationName
+    FROM customer
+    WHERE i_customerUsername = username));
 
 END //
 DELIMITER ;
