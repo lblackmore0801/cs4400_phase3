@@ -910,12 +910,23 @@ CREATE PROCEDURE cus_add_item_to_order(IN i_foodTruckName VARCHAR(55), IN i_food
 BEGIN
 
     -- place your code/solution here
-    DECLARE customerBalance INT;
-    DECLARE foodPrice INT;
-    SELECT @customerBalance := balance FROM Customer WHERE customer.username IN (SELECT orderID, customerUsername FROM orders WHERE orders.orderID = i_orderID);
-    SELECT @foodPrice := foodPrice FROM MenuItem WHERE menuItem.foodTruckName = i_foodTruckName AND menuItem.foodName = i_foodName;
-    IF foodPrice * purchaseQuantity <= customerBalance THEN
-		INSERT INTO OrderDetail VALUES (val, i_foodTruckName, i_foodName, i_purchaseQuantity, i_orderID);
+    DECLARE customerBalanceVar INT;
+    DECLARE foodPriceVar INT;
+    DECLARE customerUsernameVar VARCHAR(55);
+	DROP TABLE IF EXISTS addItemOrderTable;
+    CREATE TABLE addItemOrderTable (foodTruckName VARCHAR(55), foodName VARCHAR(55), purchaseQuantity INT, orderID INT, foodPrice DECIMAL (6,2));
+	INSERT INTO addItemOrderTable (foodTruckName, foodName, purchaseQuantity, orderID, foodPrice)
+    VALUES (i_foodTruckName, i_foodName, i_purchaseQuantity, i_orderId, (SELECT price FROM MenuItem WHERE MenuItem.foodTruckName = i_foodTruckName AND MenuItem.foodName = i_foodName));
+    -- IF (i_purchaseQuantity * (SELECT foodPrice FROM addItemOrderTable)) <= (SELECT balance FROM Customer WHERE customer.username IN (SELECT customerUsername FROM orders WHERE orders.orderID = i_orderID)) THEN
+    
+	SELECT @customerBalanceVar := balance FROM Customer WHERE customer.username IN (SELECT customerUsername FROM orders WHERE orders.orderID = i_orderID);
+	SELECT @customerUsernameVar := username FROM Customer WHERE customer.username IN (SELECT customerUsername FROM orders WHERE orders.orderID = i_orderID);
+	SELECT @foodPriceVar := price FROM MenuItem WHERE MenuItem.foodTruckName = i_foodTruckName AND menuItem.foodName = i_foodName;
+	IF @foodPriceVar * i_purchaseQuantity <= @customerBalanceVar THEN
+		INSERT INTO OrderDetail (orderID, foodTruckName, foodName, purchaseQuantity) VALUES (i_orderID, i_foodTruckName, i_foodName, i_purchaseQuantity);
+        -- UPDATE Customer AS a INNER JOIN Customer AS b SET b.balance = ((SELECT balance FROM Customer WHERE customer.username IN (SELECT customerUsername FROM orders WHERE orders.orderID = i_orderID))
+--         - ((SELECT foodPrice FROM addItemOrderTable) * i_purchaseQuantity));
+		UPDATE Customer SET balance = (@customerBalanceVar - (@foodPriceVar * i_purchaseQuantity));
 	END IF;
 
 END //
