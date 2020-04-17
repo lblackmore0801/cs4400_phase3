@@ -854,14 +854,23 @@ BEGIN
 		balance DECIMAL(6, 2));
 
     -- place your code/solution here
-    INSERT INTO cus_current_information_basic_result
-    SELECT Station.stationName, Building.buildingName, GROUP_CONCAT(Distinct BuildingTag.tag), Building.description, Customer.balance
-    FROM Station, Building, BuildingTag, Customer
-    WHERE (Customer.stationName = Station.stationName)
-    AND (Station.buildingName = Building.buildingName)
-    AND (Building.buildingName = BuildingTag.buildingName)
-    AND (i_customerUsername = Customer.username);
+    IF
+    (Select Customer.stationName
+        FROM Customer
+        WHERE (Customer.username = i_customerUsername)) = NULL
+    THEN
+        INSERT INTO cus_current_information_basic_result
+        values (NULL, NULL, NULL, NULL, Customer.balance);
 
+    ELSE
+        INSERT INTO cus_current_information_basic_result
+        SELECT Station.stationName, Building.buildingName, GROUP_CONCAT(Distinct BuildingTag.tag), Building.description, Customer.balance
+        FROM Station, Building, BuildingTag, Customer
+        WHERE (Customer.stationName = Station.stationName)
+        AND (Station.buildingName = Building.buildingName)
+        AND (Building.buildingName = BuildingTag.buildingName)
+        AND (i_customerUsername = Customer.username);
+    END IF;
 END //
 DELIMITER ;
 
