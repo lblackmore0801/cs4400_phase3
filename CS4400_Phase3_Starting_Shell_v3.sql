@@ -855,15 +855,23 @@ BEGIN
 
     -- place your code/solution here
     INSERT INTO cus_current_information_basic_result
-    SELECT Customer.stationName, Building.buildingName, GROUP_CONCAT(BuildingTag.tag), Building.description, Customer.balance
-    FROM Customer
-    INNER JOIN
-    Station ON Station.stationName = Customer.stationName
-    INNER JOIN
-    Building ON Station.buildingName = Building.buildingName
-    INNER JOIN
-    BuildingTag ON Building.buildingName = BuildingTag.buildingName
-    WHERE (i_customerUsername = Customer.username);
+    SELECT Station.stationName, Building.buildingName, GROUP_CONCAT(Distinct BuildingTag.tag), Building.description, Customer.balance
+    FROM Station, Building, BuildingTag, Customer
+    WHERE (Customer.stationName = Station.stationName)
+    AND (Station.buildingName = Building.buildingName)
+    AND (Building.buildingName = BuildingTag.buildingName)
+    AND (i_customerUsername = Customer.username);
+
+/*
+    --FROM Customer
+    --INNER JOIN
+    --Station ON Customer.stationName = Station.stationName
+    --INNER JOIN
+    --Building ON Station.buildingName = Building.buildingName
+    --INNER JOIN
+    --BuildingTag ON Building.buildingName = BuildingTag.buildingName
+    --WHERE (i_customerUsername = Customer.username)
+    --GROUP BY Station.stationName;
 
 
     --FROM Customer, Building, BuildingTag, Station
@@ -871,7 +879,7 @@ BEGIN
     --AND Station.buildingName = Building.buildingName
     --AND Building.buildingName = BuildingTag.buildingName
     --Group BY Customer.stationName;
-
+*/
 END //
 DELIMITER ;
 
