@@ -854,7 +854,10 @@ CREATE PROCEDURE cus_order(IN i_date DATE, i_customerUsername VARCHAR(55))
 BEGIN
 
     -- place your code/solution here
+    IF i_customerUsername IN (SELECT username FROM Customer)
+    THEN
     INSERT INTO cs4400spring2020.Orders(`date`, customerUsername) VALUES (i_date, i_customerUsername);
+    END IF;
 END //
 DELIMITER ;
 
