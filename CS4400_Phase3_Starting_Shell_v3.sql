@@ -902,20 +902,43 @@ BEGIN
 		foodNames varchar(100), foodQuantity int);
 
     -- place your code/solution here
-	-- INSERT INTO cus_order_history_result
---     SELECT cs4400spring2020.Orders.date, cs4400spring2020.Orders.orderID, OrderDetail.purchaseQuanitity * MenuItem.price AS orderTotal,  GROUP_CONCAT(DISTINCT(OrderDetail.foodName) SEPARATOR ', ') AS foodNames, COUNT(foodNames) as foodQuantity
---         FROM cs4400spring2020.Orders
---         INNER JOIN
---         cs4400spring2020.Orders ON cs4400spring2020.Orders.customerUsername = i_customerUsername
---         INNER JOIN
---         OrderDetail ON cs4400spring2020.Orders.orderID = OrderDetail.orderID
---         INNER JOIN
---         FoodTruck ON OrderDetail.foodTruckName  = FoodTruck.foodTruckName
---         INNER JOIN
---         MenuItem ON (OrderDetail.foodName = MenuItem.foodName AND OrderDetail.foodTruckName = MenuItem.foodTruckName)
---         WHERE
---         (cs4400spring2020.Orders.customerUsername = i_customerUsername)
---         GROUP BY cs4400spring2020.Orders.orderID
---         ORDER BY cs4400spring2020.Orders.orderID asc;
+    DROP TABLE IF EXISTS customerOrderIDs;
+    CREATE TABLE customerOrderIDs (orderID INT);
+    INSERT INTO customerOrderIDs (SELECT Orders.orderID FROM Orders WHERE customerUsername = i_customerUsername);
+    
+    DROP TABLE IF EXISTS customerOrders;
+    CREATE TABLE customerOrders (orderID INT, foodTruckName VARCHAR(55), foodName VARCHAR(55), purchaseQuantity INT);
+    INSERT INTO customerOrders (orderID, foodTruckName, foodName, purchaseQuantity)
+		SELECT customerOrderIDs.orderID, foodTruckName, foodName, orderDetail.purchaseQuantity FROM orderDetail INNER JOIN customerOrderIDs ON orderDetail.orderID = customerOrderIDs.orderID;
+    
+    DROP TABLE IF EXISTS FoodQuantity;
+    CREATE TABLE FoodQuantity (orderID INT, foodNum INT);
+    INSERT INTO FoodQuantity (orderID, foodNum) SELECT customerOrders.orderID, SUM(customerOrders.purchaseQuantity) FROM customerOrders
+		GROUP BY orderID;
+	
+    DROP TABLE IF EXISTS TotalPerFood;
+    CREATE TABLE TotalPerFood (orderID INT, foodName VARCHAR(55), purchaseQuantity INT, totalCost DECIMAL (6,2));
+    INSERT INTO TotalPerFood (orderID, foodName, purchaseQuantity, totalCost) SELECT customerOrders.orderID, customerOrders.foodName, customerOrders.purchaseQuantity, price * purchaseQuantity AS totalForFood
+		FROM MenuItem JOIN customerOrders ON MenuItem.foodName = customerOrders.foodName AND customerOrders.foodTruckName = MenuItem.foodTruckName;
+        
+	DROP TABLE IF EXISTS PurchaseTotal;
+    CREATE TABLE PurchaseTotal (orderID INT, totalCost DECIMAL(6,2));
+    INSERT INTO PurchaseTotal (orderID, totalCost) SELECT TotalPerFood.orderID, sum(totalCost) AS 'totalCost'
+		FROM TotalPerFood GROUP BY orderID;
+	
+    INSERT INTO cus_order_history_result (date, orderID, orderTotal, foodNames, foodQuantity) 
+    SELECT Orders.date, customerOrders.orderID, PurchaseTotal.totalCost, GROUP_CONCAT(DISTINCT(OrderDetail.foodName) SEPARATOR ', ') AS foodNames, FoodQuantity.foodNum
+    FROM customerOrders
+    INNER JOIN
+    Orders ON customerOrders.orderID = Orders.orderID
+    INNER JOIN
+    OrderDetail ON OrderDetail.orderID = customerOrders.orderID
+    INNER JOIN
+    PurchaseTotal ON customerOrders.orderID = PurchaseTotal.orderID
+    INNER JOIN
+    FoodQuantity ON FoodQuantity.orderID = customerOrders.orderID
+    GROUP BY orderID
+    ORDER BY orderID asc;
+
 END //
 DELIMITER ;
