@@ -496,37 +496,21 @@ BEGIN
 
 	DROP TABLE IF EXISTS mn_filter_foodTruck_result;
      CREATE TABLE mn_filter_foodTruck_result(foodTruckName varchar(100), stationName varchar(100),
-		remainingCapacity int, staffCount int, menuItemCount int)
---SELECT foodTruck.FTName, station.SName, capacity, COUNT(DISTINCT username), COUNT(DISTINCT foodName)
---    FROM foodTruck
---    INNER JOIN station
---    ON foodTruck.Hosted_By = station.SName
---    INNER JOIN staff
---    ON foodTruck.FTName = staff.Work_In
---    INNER JOIN menuItem
---    ON foodTruck.FTName = menuItem.FoodTruck
---    WHERE
---    (i_managerUsername = managerUsername) AND
---    (i_foodTruckName = foodTruckName OR i_foodTruckName = "") AND
---    (i_stationName = stationName OR i_stationName = "") AND
---    ((i_hasRemainingCapacity = TRUE AND capacity>0) OR (i_hasRemainingCapacity = FALSE))
---    GROUP BY foodTruckName
---    HAVING
---    ((i_minStaffCount IS NULL AND i_maxStaffCount IS NULL) OR (i_minStaffCount IS NULL AND staffCount <= i_maxStaffCount) OR (i_maxStaffCount IS NULL AND i_minStaffCount <= staffCount) OR (staffCount BETWEEN i_minStaffCount AND i_maxStaffCount));
+		remainingCapacity int, staffCount int, menuItemCount int);
 
-
-SELECT foodTruckName, stationName, capacity, COUNT(DISTINCT username), COUNT(DISTINCT foodName)
-    FROM FOOD_TRUCK
-    INNER JOIN STATION
-    ON FOOD_TRUCK.stationName = STATION.stationName
-    INNER JOIN STAFF
-    ON FOOD_TRUCK.foodTruckName = STAFF.foodTruckName
-    INNER JOIN MENU_ITEM
-    ON FOOD_TRUCK.foodTruckName = MENU_ITEM.foodTruckName
+INSERT into mn_filter_foodTruck_result
+SELECT FoodTruck.foodTruckName, Station.stationName, Station.capacity, COUNT(DISTINCT username) as staffCount, COUNT(DISTINCT foodName)
+    FROM FoodTruck
+    INNER JOIN Station
+    ON FoodTruck.stationName = Station.stationName
+    INNER JOIN Staff
+    ON FoodTruck.foodTruckName = Staff.foodTruckName
+    INNER JOIN MenuItem
+    ON FoodTruck.foodTruckName = MenuItem.foodTruckName
     WHERE
     (i_managerUsername = managerUsername) AND
-    (i_foodTruckName = foodTruckName OR i_foodTruckName = "") AND
-    (i_stationName = stationName OR i_stationName = "") AND
+    (i_foodTruckName = FoodTruck.foodTruckName OR i_foodTruckName = "") AND
+    (i_stationName = Station.stationName OR i_stationName = "") AND
     ((i_hasRemainingCapacity = TRUE AND capacity>0) OR (i_hasRemainingCapacity = FALSE))
     GROUP BY foodTruckName
     HAVING
@@ -641,10 +625,10 @@ BEGIN
 
 	DROP TABLE IF EXISTS mn_view_foodTruck_menu_result;
      CREATE TABLE mn_view_foodTruck_menu_result(foodTruckName varchar(100), stationName varchar(100), foodName varchar(100), price DECIMAL(6,2));
-     SELECT foodTruckName, stationName, foodName, price
-     FROM FOOD_TRUCK
-     INNER JOIN MENU_ITEM
-     ON FOOD_TRUCK.foodTruckName = MENU_ITEM.foodTruckName
+     SELECT FoodTruck.foodTruckName, FoodTruck.stationName, foodName, price
+     FROM FoodTruck
+     INNER JOIN MenuItem
+     ON FoodTruck.foodTruckName = MenuItem.foodTruckName
      WHERE
      (i_foodTruckName = foodTruckName);
 
@@ -841,11 +825,12 @@ BEGIN
 
     -- place your code/solution here
     INSERT INTO cus_current_information_basic_result
-    SELECT station.SName, building.BName, tag.Tag_Name, building.BDescription, customer.Balance
-    FROM customer, building, tag, station
-    WHERE customer.Located_At = station.SName
-    AND station.Sponsor = building.BName
-    AND building.BName = tag.BName;
+    SELECT Station.stationName, Building.buildingName, BuildingTag.tag, building.description, Customer.balance
+    FROM Customer, Building, BuildingTag, Station
+    WHERE Customer.stationName = Station.stationName
+    AND Station.buildingName = Building.buildingName
+    AND Building.buildingName = BuildingTag.buildingName;
+
 
 END //
 DELIMITER ;
