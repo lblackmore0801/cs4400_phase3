@@ -497,14 +497,14 @@ BEGIN
 	DROP TABLE IF EXISTS mn_filter_foodTruck_result;
      CREATE TABLE mn_filter_foodTruck_result(foodTruckName varchar(100), stationName varchar(100),
 		remainingCapacity int, staffCount int, menuItemCount int)
-SELECT foodTruckName, stationName, capacity, COUNT(DISTINCT username), COUNT(DISTINCT foodName)
-    FROM FOOD_TRUCK
-    INNER JOIN STATION
-    ON FOOD_TRUCK.stationName = STATION.stationName
-    INNER JOIN STAFF
-    ON FOOD_TRUCK.foodTruckName = STAFF.foodTruckName
-    INNER JOIN MENU_ITEM
-    ON FOOD_TRUCK.foodTruckName = MENU_ITEM.foodTruckName
+SELECT foodTruck.FTName, station.SName, capacity, COUNT(DISTINCT username), COUNT(DISTINCT foodName)
+    FROM foodTruck
+    INNER JOIN station
+    ON foodTruck.Hosted_By = station.SName
+    INNER JOIN staff
+    ON foodTruck.FTName = staff.Work_In
+    INNER JOIN menuItem
+    ON foodTruck.FTName = menuItem.FoodTruck
     WHERE
     (i_managerUsername = managerUsername) AND
     (i_foodTruckName = foodTruckName OR i_foodTruckName = "") AND
