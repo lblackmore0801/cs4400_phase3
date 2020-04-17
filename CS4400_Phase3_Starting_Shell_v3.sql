@@ -567,8 +567,12 @@ DELIMITER //
 CREATE PROCEDURE mn_create_foodTruck_add_station(IN i_foodTruckName VARCHAR(50), IN i_stationName VARCHAR(50), IN i_managerUsername VARCHAR(50))
 BEGIN
 
-	INSERT INTO FoodTruck(foodTruckName, stationName, managerUsername)
-		VALUES (i_foodTruckName, i_stationName, i_managerUsername);
+	IF (SELECT Station.capacity - COUNT(FoodTruck.foodTruckName) AS capacityRemaining FROM Station
+    INNER JOIN FoodTruck ON FoodTruck.stationName = Station.stationName
+    WHERE Station.stationName = i_stationName GROUP BY Station.stationName) > 0 THEN
+		INSERT INTO FoodTruck(foodTruckName, stationName, managerUsername)
+			VALUES (i_foodTruckName, i_stationName, i_managerUsername);
+	END IF;
 
 END //
 DELIMITER ;
