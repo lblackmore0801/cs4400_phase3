@@ -575,6 +575,7 @@ DELIMITER ;
 
 -- Query #19b: mn_create_foodTruck_add_staff [Screen #12 Manager Create Food Truck]
 -- i_staffName parameter is the Staff's username
+-- https://piazza.com/class/k55bdg7need3bp?cid=724 i_staffName is username
 DROP PROCEDURE IF EXISTS mn_create_foodTruck_add_staff;
 DELIMITER //
 CREATE PROCEDURE mn_create_foodTruck_add_staff(IN i_foodTruckName VARCHAR(50), IN i_staffName VARCHAR(50))
@@ -582,9 +583,10 @@ BEGIN
 
 	-- INSERT INTO STAFF(username, foodTruckName)
 	-- VALUES (i_staffName, i_foodTruckName);
-	
-	UPDATE Staff SET foodTruckName = i_foodTruckName WHERE Staff.username IN
-		(SELECT username, CONCAT(firstName, ' ', lastName) AS fullName FROM cs4400spring2020.User WHERE i_staffName = fullName);
+    
+	UPDATE Staff
+		SET foodTruckName = i_foodTruckName
+		WHERE staffName = i_staffName;
 
 END //
 DELIMITER ;
@@ -669,9 +671,13 @@ DELIMITER //
 CREATE PROCEDURE mn_update_foodTruck_station(IN i_foodTruckName VARCHAR(50), IN i_stationName VARCHAR(50))
 BEGIN
 
-    UPDATE FoodTruck
-		SET stationName = i_stationName
-		WHERE foodTruckName = i_foodTruckName;
+	IF (SELECT Station.capacity - COUNT(FoodTruck.foodTruckName) AS capacityRemaining FROM Station
+    INNER JOIN FoodTruck ON FoodTruck.stationName = Station.stationName
+    WHERE Station.stationName = i_stationName GROUP BY Station.stationName) > 0 THEN
+		UPDATE FoodTruck
+			SET stationName = i_stationName
+			WHERE foodTruckName = i_foodTruckName;
+	END IF;
 
 END //
 DELIMITER ;
@@ -698,8 +704,7 @@ DELIMITER //
 CREATE PROCEDURE mn_update_foodTruck_menu_item(IN i_foodTruckName VARCHAR(50), IN i_price DECIMAL(6,2), IN i_foodName VARCHAR(50))
 BEGIN
 
-    INSERT INTO MenuItem(price, foodTruckName, foodName)
-		VALUES (i_price, i_foodTruckName, i_foodName);
+	INSERT INTO MenuItem (price, foodTruckName, foodName) VALUES (i_price, i_foodTruckName, i_foodName);
 
 END //
 DELIMITER ;
