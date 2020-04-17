@@ -953,25 +953,25 @@ BEGIN
     DROP TABLE IF EXISTS customerOrders;
     CREATE TABLE customerOrders (orderID INT, foodTruckName VARCHAR(55), foodName VARCHAR(55), purchaseQuantity INT);
     INSERT INTO customerOrders (orderID, foodTruckName, foodName, purchaseQuantity)
-		SELECT customerOrderIDs.orderID, COALESCE(foodTruckName, ''), COALESCE(foodName, ''), COALESCE(orderDetail.purchaseQuantity, 0) FROM orderDetail RIGHT JOIN customerOrderIDs ON orderDetail.orderID = customerOrderIDs.orderID;
+		SELECT customerOrderIDs.orderID, COALESCE(foodTruckName, ''), COALESCE(foodName, ''), orderDetail.purchaseQuantity FROM orderDetail RIGHT JOIN customerOrderIDs ON orderDetail.orderID = customerOrderIDs.orderID;
     
     DROP TABLE IF EXISTS FoodQuantity;
     CREATE TABLE FoodQuantity (orderID INT, foodNum INT);
-    INSERT INTO FoodQuantity (orderID, foodNum) SELECT customerOrders.orderID, COALESCE(SUM(customerOrders.purchaseQuantity), 0) FROM customerOrders
+    INSERT INTO FoodQuantity (orderID, foodNum) SELECT customerOrders.orderID, SUM(customerOrders.purchaseQuantity) FROM customerOrders
 		GROUP BY orderID;
 	
     DROP TABLE IF EXISTS TotalPerFood;
     CREATE TABLE TotalPerFood (orderID INT, foodName VARCHAR(55), purchaseQuantity INT, totalCost DECIMAL (6,2));
-    INSERT INTO TotalPerFood (orderID, foodName, purchaseQuantity, totalCost) SELECT customerOrders.orderID, COALESCE(customerOrders.foodName, ''), COALESCE(customerOrders.purchaseQuantity, 0), COALESCE(price * purchaseQuantity, 0) AS totalForFood
+    INSERT INTO TotalPerFood (orderID, foodName, purchaseQuantity, totalCost) SELECT customerOrders.orderID, COALESCE(customerOrders.foodName, ''), customerOrders.purchaseQuantity, price * purchaseQuantity AS totalForFood
 		FROM MenuItem RIGHT JOIN customerOrders ON MenuItem.foodName = customerOrders.foodName AND customerOrders.foodTruckName = MenuItem.foodTruckName;
         
 	DROP TABLE IF EXISTS PurchaseTotal;
     CREATE TABLE PurchaseTotal (orderID INT, totalCost DECIMAL(6,2));
-    INSERT INTO PurchaseTotal (orderID, totalCost) SELECT TotalPerFood.orderID, COALESCE(sum(totalCost), 0) AS 'totalCost'
+    INSERT INTO PurchaseTotal (orderID, totalCost) SELECT TotalPerFood.orderID, sum(totalCost) AS 'totalCost'
 		FROM TotalPerFood GROUP BY orderID;
 	
     INSERT INTO cus_order_history_result (date, orderID, orderTotal, foodNames, foodQuantity) 
-    SELECT Orders.date, customerOrders.orderID, COALESCE(PurchaseTotal.totalCost, 0), COALESCE(GROUP_CONCAT(DISTINCT(OrderDetail.foodName) SEPARATOR ', '), '') AS foodNames, FoodQuantity.foodNum
+    SELECT Orders.date, customerOrders.orderID, PurchaseTotal.totalCost, COALESCE(GROUP_CONCAT(DISTINCT(OrderDetail.foodName) SEPARATOR ', '), '') AS foodNames, FoodQuantity.foodNum
     FROM customerOrders
     LEFT JOIN
     Orders ON customerOrders.orderID = Orders.orderID
