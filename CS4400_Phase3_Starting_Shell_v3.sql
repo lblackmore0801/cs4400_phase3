@@ -971,7 +971,7 @@ BEGIN
 		FROM TotalPerFood GROUP BY orderID;
 	
     INSERT INTO cus_order_history_result (date, orderID, orderTotal, foodNames, foodQuantity) 
-    SELECT Orders.date, customerOrders.orderID, PurchaseTotal.totalCost, COALESCE(GROUP_CONCAT(DISTINCT(OrderDetail.foodName) SEPARATOR ', '), '') AS foodNames, FoodQuantity.foodNum
+    SELECT Orders.date, customerOrders.orderID, PurchaseTotal.totalCost, COALESCE(GROUP_CONCAT(DISTINCT(OrderDetail.foodName) SEPARATOR ','), '') AS foodNames, FoodQuantity.foodNum
     FROM customerOrders
     LEFT JOIN
     Orders ON customerOrders.orderID = Orders.orderID
