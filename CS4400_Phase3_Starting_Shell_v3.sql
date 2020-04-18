@@ -508,7 +508,7 @@ create view q17_Help as
 SELECT StationName, Count(*) as TotalFTs
 FROM Station NATURAL JOIN FoodTruck
 GROUP BY StationName;
-						      
+
 INSERT into mn_filter_foodTruck_result
 SELECT FoodTruck.foodTruckName, Station.stationName, Station.capacity - q17_help.TotalFTs, COUNT(DISTINCT username) as staffCount, COUNT(DISTINCT foodName)
     FROM FoodTruck
@@ -524,12 +524,10 @@ SELECT FoodTruck.foodTruckName, Station.stationName, Station.capacity - q17_help
     (i_managerUsername = managerUsername) AND
     (i_foodTruckName = FoodTruck.foodTruckName OR i_foodTruckName = "" OR FoodTruck.foodTruckName LIKE CONCAT('%', i_foodTruckName, '%')) AND
     (i_stationName = Station.stationName OR i_stationName = "") AND
-    ((i_hasRemainingCapacity = TRUE AND capacity>0) OR (i_hasRemainingCapacity = FALSE))
+    ((i_hasRemainingCapacity = TRUE AND Station.capacity - q17_help.TotalFTs >0) OR (i_hasRemainingCapacity = FALSE))
     GROUP BY foodTruckName
     HAVING
     ((i_minStaffCount IS NULL AND i_maxStaffCount IS NULL) OR (i_minStaffCount IS NULL AND staffCount <= i_maxStaffCount) OR (i_maxStaffCount IS NULL AND i_minStaffCount <= staffCount) OR (staffCount BETWEEN i_minStaffCount AND i_maxStaffCount));
-
-
 
 END //
 DELIMITER ;
