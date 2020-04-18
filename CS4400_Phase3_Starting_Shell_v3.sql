@@ -522,7 +522,7 @@ SELECT FoodTruck.foodTruckName, Station.stationName, Station.capacity - q17_help
     ON FoodTruck.stationName = q17_help.stationName
     WHERE
     (i_managerUsername = managerUsername) AND
-    (i_foodTruckName = FoodTruck.foodTruckName OR i_foodTruckName = "" OR i_foodTruckName LIKE CONCAT('%', i_foodTruckName, '%')) AND
+    (i_foodTruckName = FoodTruck.foodTruckName OR i_foodTruckName = "" OR FoodTruck.foodTruckName LIKE CONCAT('%', i_foodTruckName, '%')) AND
     (i_stationName = Station.stationName OR i_stationName = "") AND
     ((i_hasRemainingCapacity = TRUE AND capacity>0) OR (i_hasRemainingCapacity = FALSE))
     GROUP BY foodTruckName
