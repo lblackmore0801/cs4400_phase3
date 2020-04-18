@@ -174,6 +174,12 @@ UNION
 SELECT username, 'Customer' AS userType FROM Customer
 WHERE username NOT IN (SELECT username FROM Employee);
 
+Drop view if exists q17_Help;
+create view q17_Help as
+SELECT StationName, Count(*) as TotalFTs
+FROM Station NATURAL JOIN FoodTruck
+GROUP BY StationName;
+
 DROP VIEW IF EXISTS Q29_View1;
 CREATE VIEW Q29_View1 AS 
 SELECT *
@@ -520,7 +526,7 @@ BEGIN
 		remainingCapacity int, staffCount int, menuItemCount int);
 
 INSERT into mn_filter_foodTruck_result
-SELECT FoodTruck.foodTruckName, Station.stationName, Station.capacity, COUNT(DISTINCT username) as staffCount, COUNT(DISTINCT foodName)
+SELECT FoodTruck.foodTruckName, Station.stationName, Station.capacity - q17_help.TotalFTs, COUNT(DISTINCT username) as staffCount, COUNT(DISTINCT foodName)
     FROM FoodTruck
     INNER JOIN Station
     ON FoodTruck.stationName = Station.stationName
@@ -528,6 +534,8 @@ SELECT FoodTruck.foodTruckName, Station.stationName, Station.capacity, COUNT(DIS
     ON FoodTruck.foodTruckName = Staff.foodTruckName
     INNER JOIN MenuItem
     ON FoodTruck.foodTruckName = MenuItem.foodTruckName
+	INNER JOIN q17_help
+    ON FoodTruck.stationName = q17_help.stationName
     WHERE
     (i_managerUsername = managerUsername) AND
     (i_foodTruckName = FoodTruck.foodTruckName OR i_foodTruckName = "") AND
