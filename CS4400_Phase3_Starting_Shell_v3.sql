@@ -869,11 +869,11 @@ BEGIN
     IF
     (Select Customer.stationName
         FROM Customer
-        WHERE (Customer.username = i_customerUsername)) = NULL
+        WHERE (Customer.username = i_customerUsername)) is NULL
     THEN
         INSERT INTO cus_current_information_basic_result
-        values (NULL, NULL, NULL, NULL, Customer.balance);
-
+        values (NULL, NULL, NULL, NULL, (SELECT Customer.balance FROM Customer WHERE customer.username = i_customerUsername));
+        /*-- Select Customer.balance FROM Customer WHERE Customer.usermane = i_customerUsername)*/
     ELSE
         INSERT INTO cus_current_information_basic_result
         SELECT Station.stationName, Building.buildingName, GROUP_CONCAT(Distinct BuildingTag.tag), Building.description, Customer.balance
