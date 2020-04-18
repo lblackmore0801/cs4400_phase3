@@ -174,28 +174,6 @@ UNION
 SELECT username, 'Customer' AS userType FROM Customer
 WHERE username NOT IN (SELECT username FROM Employee);
 
-Drop view if exists q17_Help;
-create view q17_Help as
-SELECT StationName, Count(*) as TotalFTs
-FROM Station NATURAL JOIN FoodTruck
-GROUP BY StationName;
-
-DROP VIEW IF EXISTS Q29_View1;
-CREATE VIEW Q29_View1 AS 
-SELECT *
-FROM manager NATURAL JOIN `user`;
-
-DROP VIEW IF EXISTS Q29_View2;
-CREATE VIEW Q29_View2 AS
-SELECT foodTruckName, group_concat(foodName) AS foodNames, managerUsername
-FROM menuItem NATURAL JOIN foodTruck
-GROUP BY foodTruckName;
-
-DROP VIEW IF EXISTS Q29_View3;
-CREATE VIEW Q29_View3 AS
-SELECT * FROM
-Q29_View1 INNER JOIN Q29_View2 ON username = managerUsername;
-
 -- Query #1: login [Screen #1 Login]
 DROP PROCEDURE IF EXISTS login;
 DELIMITER //
@@ -525,6 +503,12 @@ BEGIN
      CREATE TABLE mn_filter_foodTruck_result(foodTruckName varchar(100), stationName varchar(100),
 		remainingCapacity int, staffCount int, menuItemCount int);
 
+Drop view if exists q17_Help;
+create view q17_Help as
+SELECT StationName, Count(*) as TotalFTs
+FROM Station NATURAL JOIN FoodTruck
+GROUP BY StationName;
+						      
 INSERT into mn_filter_foodTruck_result
 SELECT FoodTruck.foodTruckName, Station.stationName, Station.capacity - q17_help.TotalFTs, COUNT(DISTINCT username) as staffCount, COUNT(DISTINCT foodName)
     FROM FoodTruck
@@ -538,7 +522,7 @@ SELECT FoodTruck.foodTruckName, Station.stationName, Station.capacity - q17_help
     ON FoodTruck.stationName = q17_help.stationName
     WHERE
     (i_managerUsername = managerUsername) AND
-    (i_foodTruckName = FoodTruck.foodTruckName OR i_foodTruckName = "") AND
+    (i_foodTruckName = FoodTruck.foodTruckName OR i_foodTruckName = "" OR i_foodTruckName LIKE CONCAT('%', i_foodTruckName, '%')) AND
     (i_stationName = Station.stationName OR i_stationName = "") AND
     ((i_hasRemainingCapacity = TRUE AND capacity>0) OR (i_hasRemainingCapacity = FALSE))
     GROUP BY foodTruckName
@@ -896,6 +880,22 @@ BEGIN
     CREATE TABLE cus_current_information_foodTruck_result(foodTruckName varchar(100), managerName varchar(100), foodNames text);
 
     -- place your code/solution here
+DROP VIEW IF EXISTS Q29_View1;
+CREATE VIEW Q29_View1 AS 
+SELECT *
+FROM manager NATURAL JOIN `user`;
+
+DROP VIEW IF EXISTS Q29_View2;
+CREATE VIEW Q29_View2 AS
+SELECT foodTruckName, group_concat(foodName) AS foodNames, managerUsername
+FROM menuItem NATURAL JOIN foodTruck
+GROUP BY foodTruckName;
+
+DROP VIEW IF EXISTS Q29_View3;
+CREATE VIEW Q29_View3 AS
+SELECT * FROM
+Q29_View1 INNER JOIN Q29_View2 ON username = managerUsername; 
+										 
 	INSERT INTO cus_current_information_foodTruck_result
     SELECT foodTruckName, concat(firstName, " ", lastName), foodNames
     FROM Q29_View3
